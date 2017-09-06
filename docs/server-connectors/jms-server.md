@@ -10,42 +10,40 @@ Create a service with unique name.
 
 Example: 
 ```
-service jmsService {
+service<jms> jmsService {
 }
 ```
-### Step 2: Specify the topic or queue
+### Step 2: Specify the connection details
 
-Add a service-level annotation named “Source”, and add the key-value pairs to specify the particular topic/queue that you want to listen to. The following table describes each key that can be used with the JMS service.
+Add a service-level annotation named “jms:config”, and add the relevant key-value pairs depending on the jms client to specify the JMS connection details.
+The following table describes supported keys that can be used with the @jms:config annotation.
 
-Key | Description | Required | Expected Values | Default Value
------------- | ------------- | ---------- | ----------- | ----------
-protocol | The protocol this particular service belongs to | Yes | jms | -
-factoryInitial | The JNDI initial context factory class. The class must implement the java.naming.spi.InitialContextFactory interface. | Yes | A valid class name depending on the JMS provider | -
-providerUrl | The URL/ file path of the JNDI provider | Yes | A valid URL/ path for the JNDI provider | -
-connectionFactoryJNDIName | The JNDI name of the connection factory | Yes | A valid JNDI name of the connection factory. | -
-connectionFactoryType | The type of the connection factory | no | queue, topic | queue
-destination | The JNDI name of the destination | no | A valid JNDI name of the destination | service name
-sessionAcknowledgement | The JMS session acknowledgment mode | no | AUTO_ACKNOWLEDGE, CLIENT_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE, SESSION_TRANSACTED | AUTO_ACKNOWLEDGE
-connectionUsername | The JMS connection username | no | - | -
-connectionPassword | The JMS connection password | no | - | -
-subscriptionDurable | Whether subscription is durable | no | true, false | false (subscription is not durable)
-durableSubscriberClientID | The ClientId parameter when using durable subscriptions | Required if subscriptionDurable is specified as "true" | - | -
-durableSubscriberName | The name of the durable subscriber | Required if subscriptionDurable is specified as "true" | - | -
-retryInterval | The retry interval (in milliseconds) if the JMS connection cannot be established at the beginning or is lost in the middle | no | A valid long value | 10000
-maxRetryCount | Maximum retry count if the JMS connection cannot be established at the beginning or is lost in the middle | no | A valid integer value | 5
+Key | Description | Expected Values | Default Value
+------------ | ------------- | ----------- | ----------
+initialContextFactory | The JNDI initial context factory class. The class must implement the java.naming.spi.InitialContextFactory interface. | Depends on the JMS provider. When using WSO2 MB the value can be set as `wso2mbInitialContextFactory` | -
+providerUrl | The URL to connect to the JMS brroker | A valid URL depending on the JMS provider. | -
+configFilePath | specify a configuration file instead of provider url | file path to a jndi.properties file | -
+connectionFactoryType | The type of the connection factory | queue, topic | queue
+connectionFactoryName | The JNDI name of the connection factory | - | -
+destination | The name of the destination | - | service name
+acknowledgmentMode | The JMS session acknowledgment mode | AUTO_ACKNOWLEDGE, CLIENT_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE, SESSION_TRANSACTED | AUTO_ACKNOWLEDGE
+clientID | The clientId parameter when using durable subscriptions | - | -
+durableSubscriptionId | For topic subscriptions, setting the value will create a durable topic subscription | any valid subscription name depending on the JMS provider | -
+connectionFactoryNature | The type of connection factory to use when creating consumers | default,cached,pooled | default
+properties | Key values that are not in the above set of keys can be set using the properties array | key value pair array with key values seperated by an `=` charachter. `["key1=value1", "key2=value2"]` | -
 
 Example: 
 
-```
-@Source (
-protocol = "jms",
-destination = "ballerina",
-connectionFactoryJNDIName = "QpidConnectionFactory",
-factoryInitial = "org.wso2.andes.jndi.PropertiesFileInitialContextFactory",
-providerUrl = "jndi.properties",
-connectionFactoryType = "queue",
-sessionAcknowledgement = "CLIENT_ACKNOWLEDGE")
-service jmsMBService {
+```java
+import ballerina.net.jms;
+
+@jms:config {
+    initialContextFactory:"wso2mbInitialContextFactory",
+    providerUrl: "amqp://admin:admin@carbon/carbon?brokerlist='tcp://localhost:5672'",
+    connectionFactoryType:"queue",
+    connectionFactoryName:"QueueConnectionFactory",
+    destination:"MyQueue",
+    acknowledgmentMode:"CLIENT_ACKNOWLEDGE"
 }
 ```
 
@@ -54,16 +52,17 @@ Add a resource to the JMS service. This is required, because whenever a message 
 
 Example:
 
-```
-@Source (
-protocol = "jms",
-destination = "ballerina",
-connectionFactoryJNDIName = "QpidConnectionFactory",
-factoryInitial = "org.wso2.andes.jndi.PropertiesFileInitialContextFactory",
-providerUrl = "jndi.properties",
-connectionFactoryType = "queue",
-sessionAcknowledgement = "CLIENT_ACKNOWLEDGE")
-service jmsService {
+```java
+import ballerina.net.jms;
+@jms:config {
+    initialContextFactory:"wso2mbInitialContextFactory",
+    providerUrl: "amqp://admin:admin@carbon/carbon?brokerlist='tcp://localhost:5672'",
+    connectionFactoryType:"queue",
+    connectionFactoryName:"QueueConnectionFactory",
+    destination:"MyQueue",
+    acknowledgmentMode:"CLIENT_ACKNOWLEDGE"
+}
+service<jms> jmsService {
     resource onMessage (message m) {
         // ProcessMessage
     }
@@ -75,21 +74,21 @@ Now you will have a JMS service that can be deployed to the Ballerina server.
 
 Following is a sample JMS service.
 
-```
+```java
 import ballerina.net.jms;
 
-@Source (
-protocol = "jms",
-destination = "ballerina",
-connectionFactoryJNDIName = "QpidConnectionFactory",
-factoryInitial = "org.wso2.andes.jndi.PropertiesFileInitialContextFactory",
-providerUrl = "jndi.properties",
-connectionFactoryType = "queue",
-sessionAcknowledgement = "CLIENT_ACKNOWLEDGE")
-service jmsService {
+@jms:config {
+    initialContextFactory:"wso2mbInitialContextFactory",
+    providerUrl: "amqp://admin:admin@carbon/carbon?brokerlist='tcp://localhost:5672'",
+    connectionFactoryType:"queue",
+    connectionFactoryName:"QueueConnectionFactory",
+    destination:"MyQueue",
+    acknowledgmentMode:"CLIENT_ACKNOWLEDGE"
+}
+service<jms> jmsService {
     resource onMessage (message m) {
         //Process the message
-        jms:acknowledge(m, "SUCCESS");
+        jms:acknowledge(m, jms:DELIVERY_SUCCESS);
     }
 }
 ```
@@ -109,11 +108,43 @@ This function can be used to get the value of the particular JMS header. It acce
 Example:
  
 ```
-import ballerina.lang.messages
+import ballerina.lang.messages;
+import ballerina.net.jms;
 ---
 string jmsMessageId;
-jmsMessageId = messages:getHeader(m, "JMS_MESSAGE_ID");
+jmsMessageId = messages:getHeader(m, jms:HDR_MESSAGE_ID);
 ```
+**messages:setHeader**
+
+This function can be used to set the value of the particular JMS header. It accepts the following parameters:    
+
+* Relevant message to get the header from
+* Header name
+* Header value
+
+Example:
+ 
+```
+import ballerina.lang.messages;
+import ballerina.net.jms;
+---
+string jmsMessageId;
+messages:setHeader(responseMessage, jms:HDR_CORRELATION_ID, "response-001");
+```
+Following are the supported JMS headers in Ballerina 
+
+JMS Header | Ballerina Header | Supported Operations
+-----------| ---------------- | -------------------
+JMSDestination | HEADER_DESTINATION | get only, set by JMS provider
+JMSDeliveryMode | HEADER_DELIVERY_MODE | get only, set by JMS provider
+JMSExpiration | HEADER_EXPIRATION | get and set
+JMSPriority | HEADER_PRIORITY | get and set
+JMSMessageID | HEADER_MESSAGE_ID | get only, set by JMS provider
+JMSTimestamp | HEADER_TIMESTAMP | get only, set by JMS provider
+JMSCorrelationID | HEADER_CORRELATION_ID | get and set
+JMSReplyTo | HEADER_REPLY_TO | get and set
+JMSType | HEADER_MESSAGE_TYPE | get and set
+JMSRedelivered | HEADER_REDELIVERED | get only, set by JMS provider
 
 **messages:getStringPayload**
 
@@ -143,28 +174,30 @@ string stringValue;
 stringValue = messages:getStringValue(m, “count”);
 ```
 
-### Package ballerina.net.jms
+**messages:getProperty**
 
-**jms:getMessageType**
-
-This function can be used get the JMS message type of the relevant message. This function accepts the relevant message as the argument. Return values will be “TextMessage”, “BytesMessage”, “MapMessage” or “ObjectMessage”.
+This function can be used to retrieve a property from the message.
 
 Example:
 
+Message type can be retrieved from the message as below.
+
 ```
-import ballerina.net.jms
+import ballerina.lang.messages;
 ---
 
-string messageType;
-messageType = jms:getMessageType(m);
+string msgType = messages:getProperty(m, "JMS_MESSAGE_TYPE");
+
 ```
+
+### Package ballerina.net.jms
 
 **jms:acknowledge**
 
 This function can be used to acknowledge the message delivery or success, which is particularly useful when using the client acknowledgement mode. This function accepts the following parameters:
 
 * Ballerina message that needs to be acknowledged 
-* Message delivery status - “SUCCESS” or  “ERROR”
+* Message delivery status - jms:DELIVERY_SUCCESS or jms:DELIVERY_ERROR
 
 Example:
 

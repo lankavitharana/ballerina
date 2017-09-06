@@ -20,13 +20,16 @@ package org.ballerinalang.model;
 
 import org.ballerinalang.model.builder.CallableUnitBuilder;
 import org.ballerinalang.model.statements.BlockStmt;
+import org.ballerinalang.model.statements.Statement;
 import org.ballerinalang.model.symbols.BLangSymbol;
 import org.ballerinalang.model.types.BType;
+import org.ballerinalang.runtime.worker.WorkerDataChannel;
 import org.ballerinalang.util.exceptions.FlowBuilderException;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 
 /**
  * A {@code Resource} is a single request handler within a {@code Service}.
@@ -47,9 +50,10 @@ import java.util.Map;
  */
 public class Resource implements Node, SymbolScope, CallableUnit {
     private NodeLocation location;
+    private WhiteSpaceDescriptor whiteSpaceDescriptor;
 
     // BLangSymbol related attributes
-    protected String name;
+    protected Identifier identifier;
     protected String pkgPath;
     protected boolean isPublic;
     protected SymbolName symbolName;
@@ -61,6 +65,10 @@ public class Resource implements Node, SymbolScope, CallableUnit {
     private BType[] parameterTypes;
     private Worker[] workers;
     private BlockStmt resourceBody;
+    private Queue<Statement> workerInteractionStatements;
+
+    // Key -  workerDataChannelName
+    private Map<String, WorkerDataChannel> workerDataChannelMap = new HashMap<>();
 
 
     // Scope related variables
@@ -82,10 +90,8 @@ public class Resource implements Node, SymbolScope, CallableUnit {
      */
     public AnnotationAttachment getAnnotation(String packageName, String name) {
         /* ToDo : Annotations should be a map. */
-
-        String annotationFqn = packageName.concat(":").concat(name);
         for (AnnotationAttachment annotation : annotations) {
-            if (annotation.getName().equals(annotationFqn)) {
+            if (annotation.getPkgName().equals(packageName) && annotation.getName().equals(name)) {
                 return annotation;
             }
         }
@@ -106,8 +112,24 @@ public class Resource implements Node, SymbolScope, CallableUnit {
      *
      * @return list of Workers
      */
+    @Override
     public Worker[] getWorkers() {
         return workers;
+    }
+
+    @Override
+    public void addWorkerDataChannel(WorkerDataChannel workerDataChannel) {
+        workerDataChannelMap.put(workerDataChannel.getChannelName(), workerDataChannel);
+    }
+
+    @Override
+    public Map<String, WorkerDataChannel> getWorkerDataChannelMap() {
+        return workerDataChannelMap;
+    }
+
+    @Override
+    public Queue<Statement> getWorkerInteractionStatements() {
+        return workerInteractionStatements;
     }
 
     /**
@@ -219,12 +241,26 @@ public class Resource implements Node, SymbolScope, CallableUnit {
         return location;
     }
 
+    public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+        this.whiteSpaceDescriptor = whiteSpaceDescriptor;
+    }
+
+    @Override
+    public WhiteSpaceDescriptor getWhiteSpaceDescriptor() {
+        return whiteSpaceDescriptor;
+    }
+
 
     // Methods in BLangSymbol interface
 
     @Override
     public String getName() {
-        return name;
+        return identifier.getName();
+    }
+
+    @Override
+    public Identifier getIdentifier() {
+        return identifier;
     }
 
     @Override
@@ -295,13 +331,19 @@ public class Resource implements Node, SymbolScope, CallableUnit {
 
         public Resource buildResource() {
             resource.location = this.location;
-            resource.name = this.name;
+            resource.whiteSpaceDescriptor = this.whiteSpaceDescriptor;
+            resource.identifier = this.identifier;
             resource.pkgPath = this.pkgPath;
-            resource.symbolName = new SymbolName(name, pkgPath);
+            resource.symbolName = new SymbolName(identifier.getName(), pkgPath);
 
             resource.annotations = this.annotationList.toArray(new AnnotationAttachment[this.annotationList.size()]);
             resource.parameterDefs = this.parameterDefList.toArray(new ParameterDef[this.parameterDefList.size()]);
+            // Set the parameters to the workers if there are any
+            for (Worker worker : this.workerList) {
+                worker.setParameterDefs(resource.getParameterDefs());
+            }
             resource.workers = this.workerList.toArray(new Worker[this.workerList.size()]);
+            resource.workerInteractionStatements = this.workerInteractionStatements;
             resource.resourceBody = this.body;
             return resource;
         }

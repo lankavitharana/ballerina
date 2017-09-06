@@ -17,49 +17,65 @@
 */
 package org.ballerinalang.model;
 
-import org.ballerinalang.model.expressions.Expression;
+import org.ballerinalang.model.statements.VariableDefStmt;
 import org.ballerinalang.model.types.SimpleTypeName;
-import org.ballerinalang.model.values.BValue;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * {@code ConstDef} represents a Constant in Ballerina.
  *
  * @since 0.8.0
  */
-public class ConstDef extends VariableDef implements CompilationUnit {
-    private Expression rhsExpr;
-    private BValue value;
+public class ConstDef extends SimpleVariableDef implements CompilationUnit {
+
+    private List<AnnotationAttachment> annotations;
+    private VariableDefStmt variableDefStmt;
 
     public ConstDef(NodeLocation location,
-                    String name,
+                    WhiteSpaceDescriptor whiteSpaceDescriptor,
+                    Identifier identifier,
                     SimpleTypeName typeName,
                     String pkgPath,
                     SymbolName symbolName,
-                    SymbolScope symbolScope,
-                    Expression rhsExpr) {
+                    SymbolScope symbolScope) {
 
-        super(location, name, typeName, symbolName, symbolScope);
+        super(location, whiteSpaceDescriptor, identifier, typeName, symbolName, symbolScope);
         this.pkgPath = pkgPath;
-        this.rhsExpr = rhsExpr;
+        this.annotations = new ArrayList<>();
     }
 
-    public Expression getRhsExpr() {
-        return rhsExpr;
+    public VariableDefStmt getVariableDefStmt() {
+        return variableDefStmt;
     }
 
-    public BValue getValue() {
-        return value;
+    public void setVariableDefStmt(VariableDefStmt variableDefStmt) {
+        this.variableDefStmt = variableDefStmt;
     }
 
-    public void setValue(BValue value) {
-        this.value = value;
+    /**
+     * Add an annotation to the constant.
+     * 
+     * @param annotation Annotation attachment
+     */
+    public void addAnnotation(AnnotationAttachment annotation) {
+        this.annotations.add(annotation);
     }
-
-
+    
+    /**
+     * Get all the Annotations associated with this constant.
+     *
+     * @return List of annotation attachments
+     */
+    public AnnotationAttachment[] getAnnotations() {
+        return this.annotations.toArray(new AnnotationAttachment[annotations.size()]);
+    }
+    
     // Methods in Node interface
 
     @Override
     public void accept(NodeVisitor visitor) {
         visitor.visit(this);
     }
+
 }

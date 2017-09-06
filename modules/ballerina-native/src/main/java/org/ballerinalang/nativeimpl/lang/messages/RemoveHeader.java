@@ -53,9 +53,8 @@ public class RemoveHeader extends AbstractNativeFunction {
 
     @Override
     public BValue[] execute(Context context) {
-        BMessage msg = (BMessage) getArgument(context, 0);
-        String headerName = getArgument(context, 1).stringValue();
-        // Add new header.
+        BMessage msg = (BMessage) getRefArgument(context, 0);
+        String headerName = getStringArgument(context, 0);
         msg.removeHeader(headerName);
         if (log.isDebugEnabled()) {
             log.debug("Remove header:" + headerName);

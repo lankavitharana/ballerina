@@ -17,11 +17,11 @@
 */
 package org.ballerinalang.model.expressions;
 
-import org.ballerinalang.model.NodeExecutor;
 import org.ballerinalang.model.NodeLocation;
 import org.ballerinalang.model.NodeVisitor;
+import org.ballerinalang.model.WhiteSpaceDescriptor;
+import org.ballerinalang.model.types.BType;
 import org.ballerinalang.model.types.SimpleTypeName;
-import org.ballerinalang.model.values.BValue;
 
 /**
  * {@code ConnectorInitExpr} represents a expression which creates a new connector instance.
@@ -30,23 +30,38 @@ import org.ballerinalang.model.values.BValue;
  */
 public class ConnectorInitExpr extends RefTypeInitExpr {
     private SimpleTypeName typeName;
+    private ConnectorInitExpr parentConnectorInitExpr;
+    // This variable has been introduced to support the filter connector framework
+    private BType filterSupportedType;
 
-    public ConnectorInitExpr(NodeLocation location, SimpleTypeName typeName, Expression[] argExprs) {
-        super(location, argExprs);
+    public ConnectorInitExpr(NodeLocation location, WhiteSpaceDescriptor whiteSpaceDescriptor, SimpleTypeName typeName,
+                             Expression[] argExprs) {
+        super(location, whiteSpaceDescriptor, argExprs);
         this.typeName = typeName;
+    }
+
+    public ConnectorInitExpr getParentConnectorInitExpr() {
+        return parentConnectorInitExpr;
+    }
+
+    public void setParentConnectorInitExpr(ConnectorInitExpr parentConnectorInitExpr) {
+        this.parentConnectorInitExpr = parentConnectorInitExpr;
     }
 
     public SimpleTypeName getTypeName() {
         return typeName;
     }
 
-    @Override
-    public void accept(NodeVisitor visitor) {
-        visitor.visit(this);
+    public BType getFilterSupportedType() {
+        return filterSupportedType;
+    }
+
+    public void setFilterSupportedType(BType filterSupportedType) {
+        this.filterSupportedType = filterSupportedType;
     }
 
     @Override
-    public BValue execute(NodeExecutor executor) {
-        return executor.visit(this);
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
     }
 }

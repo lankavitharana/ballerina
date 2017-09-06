@@ -27,6 +27,17 @@ CREATE TABLE IF NOT EXISTS DataTypeTable(
   PRIMARY KEY (row_id)
 );
 /
+CREATE TABLE IF NOT EXISTS DateTimeTypes(
+  row_id         INTEGER,
+  date_type      DATE,
+  time_type      TIME,
+  datetime_type  DATETIME,
+  timestamp_type TIMESTAMP
+);
+/
+insert into DateTimeTypes (row_id, date_type, time_type, datetime_type, timestamp_type) values
+  (1, '2017-02-03', '11:35:45', '2017-02-03 11:53:00', '2017-02-03 11:53:00');
+/
 insert into DataTypeTable (row_id, int_type, long_type, float_type, double_type, boolean_type, string_type,
   numeric_type, decimal_type, real_type, tinyint_type, smallint_type, clob_type, blob_type, binary_type) values
   (1, 10, 9223372036854774807, 123.34, 2139095039, TRUE, 'Hello',1234.567, 1234.567, 1234.567, 1, 5555,
@@ -99,5 +110,62 @@ CREATE PROCEDURE TestINOUTParams (IN id INT, INOUT paramInt INT, INOUT paramBigI
   SELECT clob_type INTO paramClob FROM DataTypeTable where row_id = id;
   SELECT blob_type INTO paramBlob FROM DataTypeTable where row_id = id;
   SELECT binary_type INTO paramBinary FROM DataTypeTable where row_id = id;
+  END
+/
+CREATE TABLE IF NOT EXISTS ArrayTypes(
+  row_id        INTEGER,
+  int_array     INTEGER ARRAY,
+  long_array    BIGINT ARRAY,
+  float_array   FLOAT ARRAY,
+  double_array  DOUBLE ARRAY,
+  boolean_array BOOLEAN ARRAY,
+  string_array  VARCHAR(50) ARRAY,
+  PRIMARY KEY (row_id)
+);
+/
+INSERT INTO ArrayTypes (row_id, int_array, long_array, float_array, double_array, boolean_array, string_array)
+  VALUES 1, ARRAY[1, 2, 3], ARRAY [100000000, 200000000, 300000000], ARRAY [245.23, 5559.49, 8796.123],
+  ARRAY [245.23, 5559.49, 8796.123], ARRAY [TRUE, FALSE, TRUE], ARRAY ['Hello', 'Ballerina'];
+/
+CREATE PROCEDURE TestArrayOutParams (OUT intArray INTEGER ARRAY, OUT longArray BIGINT ARRAY, OUT floatArray FLOAT ARRAY,
+  OUT doubleArray DOUBLE ARRAY, OUT boolArray BOOLEAN ARRAY, OUT varcharArray VARCHAR(50) ARRAY)
+  READS SQL DATA
+  BEGIN ATOMIC
+  SELECT int_array INTO intArray FROM ArrayTypes where row_id = 1;
+  SELECT long_array INTO longArray FROM ArrayTypes where row_id = 1;
+  SELECT float_array INTO floatArray FROM ArrayTypes where row_id = 1;
+  SELECT double_array INTO doubleArray FROM ArrayTypes where row_id = 1;
+  SELECT boolean_array INTO boolArray FROM ArrayTypes where row_id = 1;
+  SELECT string_array INTO varcharArray FROM ArrayTypes where row_id = 1;
+  END
+/
+CREATE PROCEDURE TestDateTimeOutParams (IN id INT, IN dateVal DATE, IN timeVal TIME, IN datetimeVal DATETIME,
+  IN timestampVal TIMESTAMP, OUT dateValOUT DATE, OUT timeValOUT TIME, OUT datetmOut DATETIME, OUT timestOut TIMESTAMP)
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+  insert into DateTimeTypes (row_id, date_type, time_type, datetime_type, timestamp_type) values
+  (id, dateVal, timeVal, datetimeVal, timestampVal);
+  SELECT date_type INTO dateValOUT FROM DateTimeTypes where row_id = id;
+  SELECT time_type INTO timeValOUT FROM DateTimeTypes where row_id = id;
+  SELECT datetime_type INTO datetmOut FROM DateTimeTypes where row_id = id;
+  SELECT timestamp_type INTO timestOut FROM DateTimeTypes where row_id = id;
+  END
+/
+CREATE PROCEDURE TestArrayINOutParams (IN id INT, OUT insertedCount INTEGER, INOUT intArray INTEGER ARRAY,
+  INOUT longArray BIGINT ARRAY, INOUT floatArray FLOAT ARRAY, INOUT doubleArray DOUBLE ARRAY,
+  INOUT boolArray BOOLEAN ARRAY, INOUT varcharArray VARCHAR(50) ARRAY)
+  MODIFIES SQL DATA
+  BEGIN ATOMIC
+  INSERT INTO ArrayTypes (row_id, int_array, long_array, float_array, double_array, boolean_array, string_array)
+  VALUES (id, intArray, longArray, floatArray, doubleArray, boolArray, varcharArray);
+
+  SELECT count(*) INTO insertedCount from ArrayTypes where row_id = id;
+
+  SELECT int_array INTO intArray FROM ArrayTypes where row_id = 1;
+  SELECT long_array INTO longArray FROM ArrayTypes where row_id = 1;
+  SELECT float_array INTO floatArray FROM ArrayTypes where row_id = 1;
+  SELECT double_array INTO doubleArray FROM ArrayTypes where row_id = 1;
+  SELECT boolean_array INTO boolArray FROM ArrayTypes where row_id = 1;
+  SELECT string_array INTO varcharArray FROM ArrayTypes where row_id = 1;
   END
 /

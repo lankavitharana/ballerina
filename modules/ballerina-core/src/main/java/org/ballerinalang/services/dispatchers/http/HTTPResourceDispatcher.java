@@ -18,21 +18,24 @@
 
 package org.ballerinalang.services.dispatchers.http;
 
-import org.ballerinalang.bre.Context;
-import org.ballerinalang.model.AnnotationAttachment;
-import org.ballerinalang.model.Resource;
-import org.ballerinalang.model.Service;
 import org.ballerinalang.services.dispatchers.ResourceDispatcher;
+import org.ballerinalang.services.dispatchers.uri.DispatcherUtil;
 import org.ballerinalang.services.dispatchers.uri.QueryParamProcessor;
-import org.ballerinalang.services.dispatchers.uri.URITemplate;
 import org.ballerinalang.services.dispatchers.uri.URITemplateException;
+import org.ballerinalang.util.codegen.ResourceInfo;
+import org.ballerinalang.util.codegen.ServiceInfo;
 import org.ballerinalang.util.exceptions.BallerinaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.messaging.CarbonCallback;
 import org.wso2.carbon.messaging.CarbonMessage;
+import org.wso2.carbon.messaging.DefaultCarbonMessage;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,62 +46,86 @@ public class HTTPResourceDispatcher implements ResourceDispatcher {
     private static final Logger log = LoggerFactory.getLogger(HTTPResourceDispatcher.class);
 
     @Override
-    public Resource findResource(Service service, CarbonMessage cMsg, CarbonCallback callback, Context balContext)
+    public ResourceInfo findResource(ServiceInfo service, CarbonMessage cMsg, CarbonCallback callback)
             throws BallerinaException {
 
         String method = (String) cMsg.getProperty(Constants.HTTP_METHOD);
         String subPath = (String) cMsg.getProperty(Constants.SUB_PATH);
-
+        subPath = sanitizeSubPath(subPath);
+        Map<String, String> resourceArgumentValues = new HashMap<>();
         try {
-            for (Resource resource : service.getResources()) {
-                AnnotationAttachment subPathAnnotation = resource.getAnnotation(Constants.PROTOCOL_HTTP,
-                        Constants.ANNOTATION_NAME_PATH);
-                String subPathAnnotationVal;
-                if (subPathAnnotation != null) {
-                    subPathAnnotationVal = subPathAnnotation.getValue();
+            ResourceInfo resource = service.getUriTemplate().matches(subPath, resourceArgumentValues, cMsg);
+            if (resource != null) {
+                if (cMsg.getProperty(Constants.QUERY_STR) != null) {
+                    QueryParamProcessor.processQueryParams
+                            ((String) cMsg.getProperty(Constants.QUERY_STR))
+                            .forEach((resourceArgumentValues::put));
+                }
+                cMsg.setProperty(org.ballerinalang.runtime.Constants.RESOURCE_ARGS, resourceArgumentValues);
+                cMsg.setProperty(Constants.RESOURCES_CORS, CorsRegistry.getInstance().getCorsHeaders(resource));
+                return resource;
+            } else {
+                if (method.equals(Constants.HTTP_METHOD_OPTIONS)) {
+                    handleOptionsRequest(cMsg, service, callback);
                 } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Path not specified in the Resource, using default sub path");
-                    }
-                    subPathAnnotationVal = Constants.DEFAULT_SUB_PATH;
+                    cMsg.setProperty(Constants.HTTP_STATUS_CODE, 404);
+                    throw new BallerinaException("no matching resource found for path : "
+                            + cMsg.getProperty(org.wso2.carbon.messaging.Constants.TO) + " , method : " + method);
                 }
-
-                Map<String, String> resourceArgumentValues = new HashMap<>();
-                //to enable dispatchers with query params products/{productId}?regID={regID}
-                //queryStr is the encoded value of query params
-                String rawQueryStr = cMsg.getProperty(Constants.RAW_QUERY_STR) != null
-                                  ? "?" + cMsg.getProperty(Constants.RAW_QUERY_STR)
-                                  : "";
-                if ((matches(subPathAnnotationVal, (subPath + rawQueryStr), resourceArgumentValues) ||
-                        Constants.DEFAULT_SUB_PATH.equals(subPathAnnotationVal))
-                        && (resource.getAnnotation(Constants.PROTOCOL_HTTP, method) != null)) {
-
-                    if (cMsg.getProperty(Constants.QUERY_STR) != null) {
-                        QueryParamProcessor.processQueryParams
-                                ((String) cMsg.getProperty(Constants.QUERY_STR))
-                                .forEach((resourceArgumentValues::put));
-                    }
-                    cMsg.setProperty(org.ballerinalang.runtime.Constants.RESOURCE_ARGS, resourceArgumentValues);
-                    return resource;
-                }
+                return null;
             }
-        } catch (Throwable e) {
-            throw new BallerinaException(e.getMessage(), balContext);
+        } catch (UnsupportedEncodingException | URITemplateException e) {
+            throw new BallerinaException(e.getMessage());
         }
-
-        // Throw an exception if the resource is not found.
-        throw new BallerinaException("no matching resource found for Path : " + subPath + " , Method : " + method);
-    }
-
-    public static boolean matches(String uriTemplate, String reqPath,
-                                  Map<String, String> variables) throws URITemplateException {
-        URITemplate template = new URITemplate(uriTemplate);
-        return template.matches(reqPath, variables);
-
     }
 
     @Override
     public String getProtocol() {
         return Constants.PROTOCOL_HTTP;
+    }
+
+    private String sanitizeSubPath(String subPath) {
+        if (!"/".equals(subPath)) {
+            if (!subPath.startsWith("/")) {
+                subPath = Constants.DEFAULT_BASE_PATH + subPath;
+            }
+            subPath = subPath.endsWith("/") ? subPath.substring(0, subPath.length() - 1) : subPath;
+        }
+        return subPath;
+    }
+
+    private static void handleOptionsRequest(CarbonMessage cMsg, ServiceInfo service, CarbonCallback callback)
+            throws URITemplateException {
+        DefaultCarbonMessage response = new DefaultCarbonMessage();
+        if (cMsg.getHeader(Constants.ALLOW) != null) {
+            response.setHeader(Constants.ALLOW, cMsg.getHeader(Constants.ALLOW));
+        } else if (DispatcherUtil.getServiceBasePath(service).equals(cMsg.getProperty(Constants.TO))) {
+            if (!getAllResourceMethods(service).isEmpty()) {
+                response.setHeader(Constants.ALLOW, DispatcherUtil.concatValues(getAllResourceMethods(service), false));
+            }
+        } else {
+            cMsg.setProperty(Constants.HTTP_STATUS_CODE, 404);
+            throw new BallerinaException("no matching resource found for path : "
+                    + cMsg.getProperty(org.wso2.carbon.messaging.Constants.TO) + " , method : " + "OPTIONS");
+        }
+        CorsHeaderGenerator.process(cMsg, response, false);
+        response.setProperty(Constants.HTTP_STATUS_CODE, 200);
+        response.setAlreadyRead(true);
+        response.setEndOfMsgAdded(true);
+        callback.done(response);
+        return;
+    }
+
+    private static List<String> getAllResourceMethods(ServiceInfo service) {
+        List<String> cachedMethods = new ArrayList();
+        for (ResourceInfo resource : service.getResourceInfoEntries()) {
+            if (DispatcherUtil.getHttpMethods(resource) == null) {
+                cachedMethods = DispatcherUtil.addAllMethods();
+                break;
+            } else {
+                cachedMethods.addAll(Arrays.asList(DispatcherUtil.getHttpMethods(resource)));
+            }
+        }
+        return DispatcherUtil.validateAllowMethods(cachedMethods);
     }
 }

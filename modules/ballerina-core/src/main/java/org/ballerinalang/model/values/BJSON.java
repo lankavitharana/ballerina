@@ -23,6 +23,10 @@ import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.DefaultSerializerProvider;
+import org.ballerinalang.model.types.BType;
+import org.ballerinalang.model.types.BTypes;
 import org.ballerinalang.runtime.message.BallerinaMessageDataSource;
 import org.ballerinalang.util.exceptions.BallerinaException;
 
@@ -39,12 +43,16 @@ import java.io.OutputStream;
 public final class BJSON extends BallerinaMessageDataSource implements BRefType<JsonNode> {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private BType type = BTypes.typeJSON;
 
     static {
         OBJECT_MAPPER.configure(Feature.ALLOW_SINGLE_QUOTES, true);
     }
 
     private static final JsonFactory JSON_FAC = new JsonFactory();
+
+    private static final SerializerProvider SERIALIZER_PROVIDER = new DefaultSerializerProvider.Impl()
+            .createInstance(OBJECT_MAPPER.getSerializationConfig(), OBJECT_MAPPER.getSerializerFactory());
 
     // The streaming JSON data source object
     private JSONDataSource datasource;
@@ -103,7 +111,7 @@ public final class BJSON extends BallerinaMessageDataSource implements BRefType<
                 this.schema = OBJECT_MAPPER.readTree(schema);
             }
         } catch (Throwable t) {
-            handleJsonException("failed to create json: ", t);
+            handleJsonException(t);
         } 
     }
 
@@ -177,7 +185,7 @@ public final class BJSON extends BallerinaMessageDataSource implements BRefType<
                 this.outputStream.flush();
             } else {
                 JsonGenerator gen = JSON_FAC.createGenerator(this.outputStream);
-                this.datasource.serialize(gen);
+                this.datasource.serialize(gen, SERIALIZER_PROVIDER);
                 gen.flush();
             }
         } catch (Throwable t) {
@@ -201,11 +209,11 @@ public final class BJSON extends BallerinaMessageDataSource implements BRefType<
             ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
             try {
                 JsonGenerator gen = JSON_FAC.createGenerator(byteOut);
-                this.datasource.serialize(gen);
+                this.datasource.serialize(gen, SERIALIZER_PROVIDER);
                 gen.close();
                 this.value = OBJECT_MAPPER.readTree(byteOut.toByteArray());
             } catch (Throwable t) {
-                handleJsonException("Error in building JSON node", t);
+                handleJsonException("Error in building JSON node: ", t);
             }
         }
         return this.value;
@@ -213,12 +221,25 @@ public final class BJSON extends BallerinaMessageDataSource implements BRefType<
 
     @Override
     public String stringValue() {
+        if (this.value().isTextual()) {
+            return this.value().textValue();
+        }
+        
         try {
             return OBJECT_MAPPER.writeValueAsString(this.value());
         } catch (Throwable t) {
             handleJsonException("failed to get json as string: ", t);
         }
         return null;
+    }
+
+    @Override
+    public BType getType() {
+        return this.type;
+    }
+
+    public void setType(BType type) {
+        this.type = type;
     }
 
     @Override
@@ -230,7 +251,15 @@ public final class BJSON extends BallerinaMessageDataSource implements BRefType<
         }
         return null;
     }
-    
+
+    private static void handleJsonException(Throwable t) {
+        if (t.getCause() != null) {
+            throw new BallerinaException(t.getCause().getMessage());
+        } else {
+            throw new BallerinaException(t.getMessage());
+        }
+    }
+
     private static void handleJsonException(String message, Throwable t) {
         // Here local message of the cause is logged whenever possible, to avoid java class being logged
         // along with the error message.
@@ -264,9 +293,15 @@ public final class BJSON extends BallerinaMessageDataSource implements BRefType<
         /**
          * Serializes the current representation of the JSON data source to the given {@link JsonGenerator}.
          * @param gen The {@link JsonGenerator} object to write the data to
+         * @param serializerProvider The {@link SerializerProvider} object capable of serializing specific types
          * @throws IOException Error occurs while serializing
          */
-        void serialize(JsonGenerator gen) throws IOException;
+        void serialize(JsonGenerator gen, SerializerProvider serializerProvider) throws IOException;
 
+    }
+    
+    @Override
+    public BValue copy() {
+        return new BJSON(this.stringValue());
     }
 }

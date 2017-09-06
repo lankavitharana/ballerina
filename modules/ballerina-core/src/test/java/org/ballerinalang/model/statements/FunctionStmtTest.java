@@ -20,6 +20,7 @@ package org.ballerinalang.model.statements;
 import org.ballerinalang.core.utils.BTestUtils;
 import org.ballerinalang.model.BLangProgram;
 import org.ballerinalang.model.Function;
+import org.ballerinalang.util.codegen.ProgramFile;
 import org.ballerinalang.util.exceptions.SemanticException;
 import org.ballerinalang.util.program.BLangFunctions;
 import org.testng.annotations.BeforeClass;
@@ -56,6 +57,16 @@ public class FunctionStmtTest {
             expectedExceptions = {SemanticException.class },
             expectedExceptionsMessageRegExp = "undefined-function-stmt.bal:2: undefined function 'foo'")
     public void testUndefinedFunction() {
-        BTestUtils.parseBalFile("lang/statements/undefined-function-stmt.bal");
+        BTestUtils.getProgramFile("lang/statements/undefined-function-stmt.bal");
+    }
+
+    @Test
+    public void testNoReturnFunctions() {
+        ProgramFile bLangProgram = BTestUtils.getProgramFile("lang/functions/no-return-function.bal");
+        BLangFunctions.invokeNew(bLangProgram, "test1");
+        BLangFunctions.invokeNew(bLangProgram, "test2");
+        BLangFunctions.invokeNew(bLangProgram, "test3");
+        BLangFunctions.invokeNew(bLangProgram, "test4");
+        BLangFunctions.invokeNew(bLangProgram, "test5");
     }
 }

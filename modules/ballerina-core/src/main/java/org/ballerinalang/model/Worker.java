@@ -20,14 +20,17 @@ package org.ballerinalang.model;
 
 import org.ballerinalang.model.builder.CallableUnitBuilder;
 import org.ballerinalang.model.statements.BlockStmt;
+import org.ballerinalang.model.statements.Statement;
 import org.ballerinalang.model.symbols.BLangSymbol;
 import org.ballerinalang.model.types.BType;
 import org.ballerinalang.model.values.BMessage;
+import org.ballerinalang.runtime.worker.WorkerDataChannel;
 import org.ballerinalang.util.exceptions.FlowBuilderException;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.Future;
 
 /**
@@ -50,9 +53,10 @@ public class Worker implements SymbolScope, CompilationUnit, CallableUnit {
 
     private Future<BMessage> resultFuture;
     private NodeLocation location;
+    private WhiteSpaceDescriptor whiteSpaceDescriptor;
 
     // BLangSymbol related attributes
-    protected String name;
+    protected Identifier identifier;
     protected String pkgPath;
     protected boolean isPublic;
     protected SymbolName symbolName;
@@ -61,19 +65,24 @@ public class Worker implements SymbolScope, CompilationUnit, CallableUnit {
     private ParameterDef[] parameterDefs;
     private BType[] parameterTypes;
     private Worker[] workers;
+    private Queue<Statement> workerInteractionStatements;
     private ParameterDef[] returnParams;
     private BType[] returnParamTypes;
     private BlockStmt workerBody;
     private int stackFrameSize;
     private int tempStackFrameSize;
+    private int accessibleStackFrameSize;
+
+    // Key -  workerDataChannelName
+    private Map<String, WorkerDataChannel> workerDataChannelMap = new HashMap<>();
 
     // Scope related variables
     private SymbolScope enclosingScope;
     private Map<SymbolName, BLangSymbol> symbolMap;
     private boolean isFlowBuilderVisited;
 
-    public Worker(String name) {
-        this.name = name;
+    public Worker(Identifier identifier) {
+        this.identifier = identifier;
     }
 
     private Worker(SymbolScope enclosingScope) {
@@ -101,6 +110,15 @@ public class Worker implements SymbolScope, CompilationUnit, CallableUnit {
         return location;
     }
 
+    public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+        this.whiteSpaceDescriptor = whiteSpaceDescriptor;
+    }
+
+    @Override
+    public WhiteSpaceDescriptor getWhiteSpaceDescriptor() {
+        return whiteSpaceDescriptor;
+    }
+
     /**
      * Returns the name of the callable unit.
      *
@@ -108,7 +126,12 @@ public class Worker implements SymbolScope, CompilationUnit, CallableUnit {
      */
     @Override
     public String getName() {
-        return this.name;
+        return identifier.getName();
+    }
+
+    @Override
+    public Identifier getIdentifier() {
+        return null;
     }
 
     @Override
@@ -215,7 +238,30 @@ public class Worker implements SymbolScope, CompilationUnit, CallableUnit {
         return this.returnParams;
     }
 
+    /**
+     * Get all the Workers associated with a Worker.
+     *
+     * @return list of Workers
+     */
+    @Override
+    public Worker[] getWorkers() {
+        return workers;
+    }
 
+    @Override
+    public void addWorkerDataChannel(WorkerDataChannel workerDataChannel) {
+        workerDataChannelMap.put(workerDataChannel.getChannelName(), workerDataChannel);
+    }
+
+    @Override
+    public Map<String, WorkerDataChannel> getWorkerDataChannelMap() {
+        return workerDataChannelMap;
+    }
+
+    @Override
+    public Queue<Statement> getWorkerInteractionStatements() {
+        return workerInteractionStatements;
+    }
     /**
      * Returns size of the stack frame which should be allocated for each invocations.
      *
@@ -316,6 +362,18 @@ public class Worker implements SymbolScope, CompilationUnit, CallableUnit {
         isFlowBuilderVisited = flowBuilderVisited;
     }
 
+    public void setParameterDefs(ParameterDef[] parameterDefs) {
+        this.parameterDefs = parameterDefs;
+    }
+
+    public int getAccessibleStackFrameSize() {
+        return accessibleStackFrameSize;
+    }
+
+    public void setAccessibleStackFrameSize(int accessibleStackFrameSize) {
+        this.accessibleStackFrameSize = accessibleStackFrameSize;
+    }
+
     /**
      * {@code WorkerBuilder} is responsible for building a {@code Worker} node.
      *
@@ -331,12 +389,15 @@ public class Worker implements SymbolScope, CompilationUnit, CallableUnit {
 
         public Worker buildWorker() {
             bWorker.location = this.location;
-            bWorker.name = this.name;
+            bWorker.whiteSpaceDescriptor = this.whiteSpaceDescriptor;
+            bWorker.identifier = this.identifier;
             bWorker.pkgPath = this.pkgPath;
-            bWorker.symbolName = new SymbolName(name, pkgPath);
+            bWorker.symbolName = new SymbolName(identifier.getName(), pkgPath);
 
             bWorker.parameterDefs = this.parameterDefList.toArray(new ParameterDef[this.parameterDefList.size()]);
             bWorker.returnParams = this.returnParamList.toArray(new ParameterDef[this.returnParamList.size()]);
+            bWorker.workers = this.workerList.toArray(new Worker[this.workerList.size()]);
+            bWorker.workerInteractionStatements = this.workerInteractionStatements;
             bWorker.workerBody = this.body;
             return bWorker;
         }

@@ -19,13 +19,16 @@ package org.ballerinalang.model;
 
 import org.ballerinalang.model.builder.CallableUnitBuilder;
 import org.ballerinalang.model.statements.BlockStmt;
+import org.ballerinalang.model.statements.Statement;
 import org.ballerinalang.model.symbols.BLangSymbol;
 import org.ballerinalang.model.types.BType;
+import org.ballerinalang.runtime.worker.WorkerDataChannel;
 import org.ballerinalang.util.exceptions.FlowBuilderException;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 
 /**
  * {@code BTypeMapper} represents a  TypeMapper in ballerina.
@@ -34,9 +37,10 @@ import java.util.Map;
  */
 public class BTypeMapper implements TypeMapper, SymbolScope, CompilationUnit {
     private NodeLocation location;
+    private WhiteSpaceDescriptor whiteSpaceDescriptor;
 
     // BLangSymbol related attributes
-    protected String name;
+    protected Identifier identifier;
     protected String pkgPath;
     protected boolean isNative;
     protected SymbolName symbolName;
@@ -151,6 +155,36 @@ public class BTypeMapper implements TypeMapper, SymbolScope, CompilationUnit {
         this.parameterTypes = parameterTypes;
     }
 
+    /**
+     * Get worker interaction statements related to a callable unit.
+     *
+     * @return Queue of worker interactions
+     */
+    @Override
+    public Queue<Statement> getWorkerInteractionStatements() {
+        return null;
+    }
+
+    /**
+     * Get the workers defined within a callable unit.
+     *
+     * @return Array of workers
+     */
+    @Override
+    public Worker[] getWorkers() {
+        return new Worker[0];
+    }
+
+    @Override
+    public void addWorkerDataChannel(WorkerDataChannel workerDataChannel) {
+
+    }
+
+    @Override
+    public Map<String, WorkerDataChannel> getWorkerDataChannelMap() {
+        return null;
+    }
+
     // Methods in Node interface
 
     @Override
@@ -163,12 +197,26 @@ public class BTypeMapper implements TypeMapper, SymbolScope, CompilationUnit {
         return location;
     }
 
+    public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+        this.whiteSpaceDescriptor = whiteSpaceDescriptor;
+    }
+
+    @Override
+    public WhiteSpaceDescriptor getWhiteSpaceDescriptor() {
+        return whiteSpaceDescriptor;
+    }
+
 
     // Methods in BLangSymbol interface
 
     @Override
     public String getName() {
-        return name;
+        return this.identifier.getName();
+    }
+
+    @Override
+    public Identifier getIdentifier() {
+        return identifier;
     }
 
     @Override
@@ -247,7 +295,8 @@ public class BTypeMapper implements TypeMapper, SymbolScope, CompilationUnit {
 
         public BTypeMapper buildTypeMapper() {
             bTypeCon.location = this.location;
-            bTypeCon.name = this.name;
+            bTypeCon.whiteSpaceDescriptor = this.whiteSpaceDescriptor;
+            bTypeCon.identifier = this.identifier;
             bTypeCon.pkgPath = this.pkgPath;
             bTypeCon.isNative = this.isNative;
 

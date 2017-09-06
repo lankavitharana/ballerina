@@ -17,6 +17,8 @@
 */
 package org.ballerinalang.model.values;
 
+import org.ballerinalang.model.types.BType;
+import org.ballerinalang.model.types.BTypes;
 import org.ballerinalang.model.util.MessageUtils;
 import org.ballerinalang.runtime.Constants;
 import org.ballerinalang.runtime.message.BallerinaMessageDataSource;
@@ -29,6 +31,7 @@ import org.wso2.carbon.messaging.MessageUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * {@code BMessage} represents a Carbon Message in Ballerina.
@@ -223,25 +226,66 @@ public final class BMessage implements BRefType<CarbonMessage> {
         if (this.isAlreadyRead()) {
             return this.value.getMessageDataSource().getMessageAsString();
         }
-        return MessageUtils.getStringFromInputStream(this.value.getInputStream());
+        String stringValue = MessageUtils.getStringFromInputStream(this.value.getInputStream());
+        StringDataSource stringDataSource = new StringDataSource(stringValue, this.value.getOutputStream());
+        this.value.setMessageDataSource(stringDataSource);
+        setAlreadyRead(true);
+        return stringValue;
+    }
+
+    @Override
+    public BType getType() {
+        return BTypes.typeMessage;
     }
 
     public BMessage clone() {
         BMessage clonedMessage = new BMessage();
-        // Clone the carbon message
-        if (this.value != null && !this.value.isEmpty()) {
-            clonedMessage.value = MessageUtil.cloneCarbonMessageWithData(this.value());
-        } else {
-            clonedMessage.setValue(MessageUtil.cloneCarbonMessageWithOutData(this.value()));
-            clonedMessage.setHeaderList(this.getHeaders());
-
-        }
         // Clone the already built content
-        if (this.value.getMessageDataSource() != null &&
-                this.value.getMessageDataSource() instanceof BallerinaMessageDataSource) {
-            clonedMessage.setMessageDataSource(((BallerinaMessageDataSource) this.value.
-                    getMessageDataSource()).clone());
+        if (this.value != null) {
+            if (this.value.getMessageDataSource() != null &&
+                    this.value.getMessageDataSource() instanceof BallerinaMessageDataSource) {
+                // Clone the headers and the properties map of this message
+                clonedMessage.setValue(MessageUtil.cloneCarbonMessageWithOutData(this.value()));
+                clonedMessage.setMessageDataSource(((BallerinaMessageDataSource) this.value.
+                        getMessageDataSource()).clone());
+            } else {
+                clonedMessage.value = MessageUtil.cloneCarbonMessageWithData(this.value());
+            }
         }
         return clonedMessage;
+    }
+
+    /**
+     * Set properties of a message.
+     *
+     * @param propertyName name of the property
+     * @param propertyValue value of the property
+     */
+    public void setProperty(String propertyName, Object propertyValue) {
+        value.setProperty(propertyName, propertyValue);
+    }
+
+    /**
+     * Retrieve a message property.
+     *
+     * @param propertyName name of the property
+     * @return The property value.
+     */
+    public Object getProperty(String propertyName) {
+        return value.getProperty(propertyName);
+    }
+
+    /**
+     * Get all message properties.
+     *
+     * @return Map of all message properties.
+     */
+    public Map<String, Object> getProperties() {
+        return value.getProperties();
+    }
+    
+    @Override
+    public BValue copy() {
+        return clone();
     }
 }

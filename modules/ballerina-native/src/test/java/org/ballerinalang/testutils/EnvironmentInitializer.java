@@ -18,57 +18,51 @@
 
 package org.ballerinalang.testutils;
 
-import org.ballerinalang.bre.RuntimeEnvironment;
-import org.ballerinalang.model.BLangPackage;
-import org.ballerinalang.model.BLangProgram;
-import org.ballerinalang.model.Service;
-import org.ballerinalang.model.builder.BLangExecutionFlowBuilder;
-import org.ballerinalang.nativeimpl.util.BTestUtils;
+import org.ballerinalang.BLangCompiler;
+import org.ballerinalang.BLangProgramRunner;
 import org.ballerinalang.natives.BuiltInNativeConstructLoader;
 import org.ballerinalang.natives.connectors.BallerinaConnectorManager;
 import org.ballerinalang.services.MessageProcessor;
 import org.ballerinalang.services.dispatchers.DispatcherRegistry;
+import org.ballerinalang.util.codegen.PackageInfo;
+import org.ballerinalang.util.codegen.ProgramFile;
+import org.ballerinalang.util.codegen.ServiceInfo;
+
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * {@code EnvironmentInitializr} is responsible for initializing an environment for a particular ballerina file.
  */
 public class EnvironmentInitializer {
 
-    public static BLangProgram setup(String sourcePath) {
+    public static ProgramFile setupProgramFile(String sourcePath) {
         // Initialize server connectors before starting the test cases
         BallerinaConnectorManager.getInstance().initialize(new MessageProcessor());
         BallerinaConnectorManager.getInstance().registerServerConnectorErrorHandler(new TestErrorHandler());
 
         // Load constructors
         BuiltInNativeConstructLoader.loadConstructs();
-
-        BLangProgram bLangProgram = BTestUtils.parseBalFile(sourcePath);
-
-        BLangExecutionFlowBuilder flowBuilder = new BLangExecutionFlowBuilder();
-        for (BLangPackage servicePackage : bLangProgram.getPackages()) {
-            for (Service service : servicePackage.getServices()) {
-                service.setBLangProgram(bLangProgram);
-                DispatcherRegistry.getInstance().getServiceDispatchers().forEach((protocol, dispatcher) ->
-                        dispatcher.serviceRegistered(service));
-                service.accept(flowBuilder);
-            }
+        try {
+            Path programPath = Paths.get(
+                    EnvironmentInitializer.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            ProgramFile programFile = BLangCompiler.compile(programPath, Paths.get(sourcePath));
+            BLangProgramRunner.runService(programFile);
+            return programFile;
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("error while running test: " + e.getMessage());
         }
-
-        RuntimeEnvironment runtimeEnv = RuntimeEnvironment.get(bLangProgram);
-        bLangProgram.setRuntimeEnvironment(runtimeEnv);
-
-        return bLangProgram;
     }
 
-    public static void cleanup(BLangProgram bLangProgram) {
-
-        for (BLangPackage bLangPackage : bLangProgram.getPackages()) {
-            for (Service service : bLangPackage.getServices()) {
-                DispatcherRegistry.getInstance().getServiceDispatchers().forEach((protocol, dispatcher) -> {
-                    dispatcher.serviceUnregistered(service);
-                });
-            }
+    public static void cleanup(ProgramFile programFile) {
+        PackageInfo packageInfo = programFile.getEntryPackage();
+        for (ServiceInfo service : packageInfo.getServiceInfoEntries()) {
+            DispatcherRegistry.getInstance().getServiceDispatchers().forEach((protocol, dispatcher) -> {
+                dispatcher.serviceUnregistered(service);
+            });
         }
+
     }
 
 }

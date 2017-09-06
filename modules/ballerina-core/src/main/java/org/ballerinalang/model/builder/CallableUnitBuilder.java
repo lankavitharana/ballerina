@@ -21,16 +21,21 @@ import org.ballerinalang.model.AnnotationAttachment;
 import org.ballerinalang.model.BTypeMapper;
 import org.ballerinalang.model.BallerinaAction;
 import org.ballerinalang.model.BallerinaFunction;
+import org.ballerinalang.model.Identifier;
 import org.ballerinalang.model.NodeLocation;
 import org.ballerinalang.model.ParameterDef;
 import org.ballerinalang.model.Resource;
 import org.ballerinalang.model.SymbolName;
 import org.ballerinalang.model.SymbolScope;
+import org.ballerinalang.model.WhiteSpaceDescriptor;
 import org.ballerinalang.model.Worker;
 import org.ballerinalang.model.statements.BlockStmt;
+import org.ballerinalang.model.statements.Statement;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * <p>{@code CallableUnitBuilder} is responsible for building Functions, Actions and Resources from parser events.</p>
@@ -41,10 +46,11 @@ import java.util.List;
  */
 public class CallableUnitBuilder {
     protected NodeLocation location;
+    protected WhiteSpaceDescriptor whiteSpaceDescriptor;
     protected SymbolScope currentScope;
 
     // BLangSymbol related attributes
-    protected String name;
+    protected Identifier identifier;
     protected String pkgPath;
     protected boolean isPublic;
     protected SymbolName symbolName;
@@ -54,9 +60,10 @@ public class CallableUnitBuilder {
     protected List<ParameterDef> parameterDefList = new ArrayList<>();
     protected List<ParameterDef> returnParamList = new ArrayList<>();
     protected List<Worker> workerList = new ArrayList<>();
+    protected Queue<Statement> workerInteractionStatements = new LinkedList<>();
     protected BlockStmt body;
 
-    SymbolScope getCurrentScope() {
+    public SymbolScope getCurrentScope() {
         return currentScope;
     }
 
@@ -64,8 +71,8 @@ public class CallableUnitBuilder {
         this.location = location;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setIdentifier(Identifier identifier) {
+        this.identifier = identifier;
     }
 
     public void setPkgPath(String pkgPath) {
@@ -96,6 +103,10 @@ public class CallableUnitBuilder {
         this.workerList.add(worker);
     }
 
+    public void addWorkerInteractionStatement(Statement workerInteraction) {
+        this.workerInteractionStatements.add(workerInteraction);
+    }
+
     public void setBody(BlockStmt body) {
         this.body = body;
     }
@@ -122,5 +133,9 @@ public class CallableUnitBuilder {
     
     public void setNative(boolean isNative) {
         this.isNative = isNative;
+    }
+
+    public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+        this.whiteSpaceDescriptor = whiteSpaceDescriptor;
     }
 }

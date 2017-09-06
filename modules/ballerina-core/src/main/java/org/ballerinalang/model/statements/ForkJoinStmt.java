@@ -20,25 +20,27 @@ package org.ballerinalang.model.statements;
 import org.ballerinalang.model.AnnotationAttachment;
 import org.ballerinalang.model.CallableUnit;
 import org.ballerinalang.model.CompilationUnit;
-import org.ballerinalang.model.NodeExecutor;
+import org.ballerinalang.model.Identifier;
 import org.ballerinalang.model.NodeLocation;
 import org.ballerinalang.model.NodeVisitor;
 import org.ballerinalang.model.ParameterDef;
 import org.ballerinalang.model.SymbolName;
 import org.ballerinalang.model.SymbolScope;
 import org.ballerinalang.model.VariableDef;
+import org.ballerinalang.model.WhiteSpaceDescriptor;
 import org.ballerinalang.model.Worker;
 import org.ballerinalang.model.builder.CallableUnitBuilder;
 import org.ballerinalang.model.expressions.Expression;
-import org.ballerinalang.model.expressions.VariableRefExpr;
 import org.ballerinalang.model.symbols.BLangSymbol;
 import org.ballerinalang.model.types.BType;
+import org.ballerinalang.runtime.worker.WorkerDataChannel;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 /**
  * {@code ForkJoinStmt} represents a fork/join statement.
@@ -50,7 +52,6 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
     private Worker[] workers;
     private Join join;
     private Timeout timeout;
-    private VariableRefExpr messageReference;
     // Scope related variables
     private SymbolScope enclosingScope;
     private Map<SymbolName, BLangSymbol> symbolMap;
@@ -76,6 +77,7 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
         // Scope related variables
         private SymbolScope enclosingScope;
         private Map<SymbolName, BLangSymbol> symbolMap;
+        private int ip;
 
         public Join (NodeLocation nodeLocation, SymbolScope enclosingScope) {
             this.enclosingScope = enclosingScope;
@@ -83,6 +85,13 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
             this.symbolMap = new HashMap<>();
         }
 
+        public int getIp() {
+            return ip;
+        }
+
+        public void setIp(int ip) {
+            this.ip = ip;
+        }
 
         public NodeLocation getNodeLocation() {
             return nodeLocation;
@@ -145,6 +154,7 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
         private ParameterDef timeoutResult;
         private Statement timeoutBlock;
         private NodeLocation nodeLocation;
+        private int ip;
 
         // Scope related variables
         private SymbolScope enclosingScope;
@@ -156,6 +166,13 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
             symbolMap = new HashMap<>();
         }
 
+        public int getIp() {
+            return ip;
+        }
+
+        public void setIp(int ip) {
+            this.ip = ip;
+        }
 
         public NodeLocation getNodeLocation() {
             return nodeLocation;
@@ -215,8 +232,14 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
         return workers;
     }
 
-    public VariableRefExpr getMessageReference() {
-        return messageReference;
+    @Override
+    public void addWorkerDataChannel(WorkerDataChannel workerDataChannel) {
+
+    }
+
+    @Override
+    public Map<String, WorkerDataChannel> getWorkerDataChannelMap() {
+        return null;
     }
 
     @Override
@@ -225,8 +248,8 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
     }
 
     @Override
-    public void execute(NodeExecutor executor) {
-        executor.visit(this);
+    public StatementKind getKind() {
+        return StatementKind.FORK_JOIN;
     }
 
     /**
@@ -236,6 +259,11 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
      */
     @Override
     public String getName() {
+        return null;
+    }
+
+    @Override
+    public Identifier getIdentifier() {
         return null;
     }
 
@@ -400,6 +428,16 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
 
     }
 
+    /**
+     * Get worker interaction statements related to a callable unit.
+     *
+     * @return Queue of worker interactions
+     */
+    @Override
+    public Queue<Statement> getWorkerInteractionStatements() {
+        return null;
+    }
+
     // Methods in the SymbolScope interface
 
     @Override
@@ -446,7 +484,6 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
         private Expression timeoutExpression;
         private ParameterDef timeoutResult;
         private Statement timeoutBlock;
-        private VariableRefExpr messageReference;
         private ForkJoinStmt forkJoinStmt;
 
         public ForkJoinStmtBuilder(SymbolScope enclosingScope) {
@@ -496,10 +533,6 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
             this.location = location;
         }
 
-        public void setMessageReference(VariableRefExpr messageReference) {
-            this.messageReference = messageReference;
-        }
-
         public void setWorkers(Worker[] workers) {
             this.workers = workers;
         }
@@ -512,20 +545,34 @@ public class ForkJoinStmt extends AbstractStatement implements SymbolScope, Comp
             return timeout;
         }
 
+        public WhiteSpaceDescriptor getWhiteSpaceDescriptor() {
+            return whiteSpaceDescriptor;
+        }
+
+        public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+            this.whiteSpaceDescriptor = whiteSpaceDescriptor;
+        }
+
         public ForkJoinStmt build() {
             forkJoinStmt.workers = this.workers;
             this.join.joinBlock = this.joinBlock;
+            if (this.join.joinBlock != null) {
+                this.join.joinBlock.setParent(forkJoinStmt);
+            }
             this.join.joinCount = this.joinCount;
             this.join.joinResult = this.joinResult;
             this.join.joinType = this.joinType;
             this.join.joinWorkers = joinWorkers.toArray(new String[joinWorkers.size()]);
             forkJoinStmt.join = this.join;
             this.timeout.timeoutBlock = this.timeoutBlock;
+            if (this.timeout.timeoutBlock != null) {
+                this.timeout.timeoutBlock.setParent(forkJoinStmt);
+            }
             this.timeout.timeoutExpression = this.timeoutExpression;
             this.timeout.timeoutResult = this.timeoutResult;
             forkJoinStmt.timeout = this.timeout;
-            forkJoinStmt.messageReference = this.messageReference;
             forkJoinStmt.location = this.location;
+            forkJoinStmt.whiteSpaceDescriptor = whiteSpaceDescriptor;
             return forkJoinStmt;
         }
     }

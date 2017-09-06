@@ -20,13 +20,17 @@ package org.ballerinalang.model;
 
 import org.ballerinalang.model.builder.CallableUnitBuilder;
 import org.ballerinalang.model.statements.BlockStmt;
+import org.ballerinalang.model.statements.Statement;
 import org.ballerinalang.model.symbols.BLangSymbol;
 import org.ballerinalang.model.types.BType;
+import org.ballerinalang.natives.NativeUnitProxy;
+import org.ballerinalang.runtime.worker.WorkerDataChannel;
 import org.ballerinalang.util.exceptions.FlowBuilderException;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 
 /**
  * An {@code Action} is a operation (function) that can be executed against a connector.
@@ -45,9 +49,10 @@ import java.util.Map;
  */
 public class BallerinaAction implements Action, SymbolScope, Node {
     private NodeLocation location;
+    private WhiteSpaceDescriptor whiteSpaceDescriptor;
 
     // BLangSymbol related attributes
-    protected String name;
+    protected Identifier identifier;
     protected String pkgPath;
     protected boolean isPublic;
     protected SymbolName symbolName;
@@ -62,6 +67,10 @@ public class BallerinaAction implements Action, SymbolScope, Node {
     private BlockStmt actionBody;
     private BallerinaConnectorDef connectorDef;
     private int stackFrameSize;
+    private Queue<Statement> workerInteractionStatements;
+
+    // Key -  workerDataChannelName
+    private Map<String, WorkerDataChannel> workerDataChannelMap = new HashMap<>();
 
     // Scope related variables
     private SymbolScope enclosingScope;
@@ -70,6 +79,8 @@ public class BallerinaAction implements Action, SymbolScope, Node {
     // Linker related variables
     private int tempStackFrameSize;
     private boolean isFlowBuilderVisited;
+
+    private NativeUnitProxy nativeAction;
 
     private BallerinaAction(SymbolScope enclosingScope) {
         this.enclosingScope = enclosingScope;
@@ -83,6 +94,10 @@ public class BallerinaAction implements Action, SymbolScope, Node {
 
     public ParameterDef[] getParameterDefs() {
         return parameterDefs;
+    }
+
+    public void setParameterDefs(ParameterDef[] parameterDefs) {
+        this.parameterDefs = parameterDefs;
     }
 
     @Override
@@ -119,6 +134,14 @@ public class BallerinaAction implements Action, SymbolScope, Node {
         this.tempStackFrameSize = stackFrameSize;
     }
 
+    public NativeUnitProxy getNativeAction() {
+        return nativeAction;
+    }
+
+    public void setNativeAction(NativeUnitProxy nativeAction) {
+        this.nativeAction = nativeAction;
+    }
+
     @Override
     public BlockStmt getCallableUnitBody() {
         return actionBody;
@@ -130,6 +153,20 @@ public class BallerinaAction implements Action, SymbolScope, Node {
 
     public Worker[] getWorkers() {
         return workers;
+    }
+
+    @Override
+    public void addWorkerDataChannel(WorkerDataChannel workerDataChannel) {
+        workerDataChannelMap.put(workerDataChannel.getChannelName(), workerDataChannel);
+    }
+
+    @Override
+    public Map<String, WorkerDataChannel> getWorkerDataChannelMap() {
+        return workerDataChannelMap;
+    }
+
+    public Queue<Statement> getWorkerInteractionStatements() {
+        return workerInteractionStatements;
     }
 
     public ConnectorDcl[] getConnectorDcls() {
@@ -176,11 +213,25 @@ public class BallerinaAction implements Action, SymbolScope, Node {
         return location;
     }
 
+    public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+        this.whiteSpaceDescriptor = whiteSpaceDescriptor;
+    }
+
+    @Override
+    public WhiteSpaceDescriptor getWhiteSpaceDescriptor() {
+        return whiteSpaceDescriptor;
+    }
+
     // Methods in BLangSymbol interface
 
     @Override
     public String getName() {
-        return name;
+        return identifier.getName();
+    }
+
+    @Override
+    public Identifier getIdentifier() {
+        return identifier;
     }
 
     @Override
@@ -222,6 +273,35 @@ public class BallerinaAction implements Action, SymbolScope, Node {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof BallerinaAction) {
+            BallerinaAction other = (BallerinaAction) obj;
+
+            if (!this.getName().equals(other.getName())) {
+                return false;
+            }
+
+            if (this.parameterTypes.length == other.parameterTypes.length) {
+                for (int i = 1; i < this.parameterTypes.length; i++) {
+                    if (!this.parameterTypes[i].equals(other.parameterTypes[i])) {
+                        return false;
+                    }
+                }
+            }
+            if (this.returnParamTypes.length == other.returnParamTypes.length) {
+                for (int i = 0; i < this.returnParamTypes.length; i++) {
+                    if (!this.returnParamTypes[i].equals(other.returnParamTypes[i])) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
     public void define(SymbolName name, BLangSymbol symbol) {
         symbolMap.put(name, symbol);
     }
@@ -259,14 +339,20 @@ public class BallerinaAction implements Action, SymbolScope, Node {
 
         public BallerinaAction buildAction() {
             bAction.location = this.location;
-            bAction.name = this.name;
+            bAction.whiteSpaceDescriptor = this.whiteSpaceDescriptor;
+            bAction.identifier = this.identifier;
             bAction.pkgPath = this.pkgPath;
-            bAction.symbolName = new SymbolName(name, pkgPath);
+            bAction.symbolName = new SymbolName(identifier.getName(), pkgPath);
 
             bAction.annotations = this.annotationList.toArray(new AnnotationAttachment[this.annotationList.size()]);
             bAction.parameterDefs = this.parameterDefList.toArray(new ParameterDef[this.parameterDefList.size()]);
             bAction.returnParams = this.returnParamList.toArray(new ParameterDef[this.returnParamList.size()]);
+            // Set the parameters to the workers if there are any
+            for (Worker worker : this.workerList) {
+                worker.setParameterDefs(bAction.getParameterDefs());
+            }
             bAction.workers = this.workerList.toArray(new Worker[this.workerList.size()]);
+            bAction.workerInteractionStatements = this.workerInteractionStatements;
             bAction.actionBody = this.body;
             bAction.isNative = this.isNative;
             return bAction;

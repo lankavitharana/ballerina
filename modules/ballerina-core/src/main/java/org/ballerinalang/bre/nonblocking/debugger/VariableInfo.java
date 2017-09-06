@@ -3,10 +3,10 @@
 */
 package org.ballerinalang.bre.nonblocking.debugger;
 
-import org.ballerinalang.model.values.BArray;
 import org.ballerinalang.model.values.BJSON;
 import org.ballerinalang.model.values.BMap;
-import org.ballerinalang.model.values.BString;
+import org.ballerinalang.model.values.BNewArray;
+import org.ballerinalang.model.values.BStruct;
 import org.ballerinalang.model.values.BValue;
 import org.ballerinalang.model.values.BValueType;
 import org.ballerinalang.model.values.BXML;
@@ -37,30 +37,29 @@ public class VariableInfo {
             return;
         }
         type = bValue.getClass().getSimpleName();
+        bValueSting = getStringValue(bValue);
+    }
+
+    private String getStringValue(BValue bValue) {
+        String bValueString = "";
         if (bValue instanceof BValueType || bValue instanceof BXML || bValue instanceof BJSON) {
-            bValueSting = bValue.stringValue();
-        } else if (bValue instanceof BArray) {
-            BArray bArray = (BArray) bValue;
-            bValueSting = "Array[" + bArray.size() + "] {";
-            for (int i = 0; i < bArray.size(); i++) {
-                bValueSting = bValueSting + bArray.get(i).stringValue();
-                if (i + 1 != bArray.size()) {
-                    bValueSting = bValueSting + ", ";
-                }
-            }
-            bValueSting = bValueSting + "} ";
+            bValueString = bValue.stringValue();
+        } else if (bValue instanceof BNewArray) {
+            BNewArray bArray = (BNewArray) bValue;
+            bValueString = "Array[" + bArray.size() + "] ";
+            bValueString = bValueString + bArray.stringValue();
         } else if (bValue instanceof BMap) {
             BMap bmap = (BMap) bValue;
-            bValueSting = "Map[" + ((BMap) bValue).size() + "] {\n\t";
-            for (Object key : bmap.keySet()) {
-                BString bString = (BString) key;
-                bValueSting = bValueSting + bString + " : " + bmap.get(key) + "\n";
-            }
-            bValueSting = bValueSting + "} ";
+            bValueString = "Map[" + bmap.size() + "] ";
+            bValueString = bValueString + bmap.stringValue();
+        } else if (bValue instanceof BStruct) {
+            BStruct bStruct = (BStruct) bValue;
+            bValueString = "struct " + bStruct.getType().getName() + " ";
+            bValueString = bValueString + bStruct.stringValue();
         } else {
-            bValueSting = "<Complex_Value>";
+            bValueString = "<Complex_Value>";
         }
-
+        return bValueString;
     }
 
     /**

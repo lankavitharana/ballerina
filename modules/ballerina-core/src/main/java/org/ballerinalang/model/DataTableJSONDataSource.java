@@ -20,6 +20,7 @@ package org.ballerinalang.model;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.ballerinalang.model.values.BDataTable;
@@ -39,23 +40,26 @@ public class DataTableJSONDataSource implements JSONDataSource {
 
     private JSONObjectGenerator objGen;
 
-    public DataTableJSONDataSource(BDataTable df) {
-        this(df, new DefaultJSONObjectGenerator());
+    private boolean isInTransaction;
+
+    public DataTableJSONDataSource(BDataTable df, boolean isInTransaction) {
+        this(df, new DefaultJSONObjectGenerator(), isInTransaction);
     }
 
-    public DataTableJSONDataSource(BDataTable df, JSONObjectGenerator objGen) {
+    public DataTableJSONDataSource(BDataTable df, JSONObjectGenerator objGen, boolean isInTransaction) {
         this.df = df;
         this.objGen = objGen;
+        this.isInTransaction = isInTransaction;
     }
 
     @Override
-    public void serialize(JsonGenerator gen) throws IOException {
+    public void serialize(JsonGenerator gen, SerializerProvider serializerProvider) throws IOException {
         gen.writeStartArray();
-        while (this.df.next()) {
-            this.objGen.transform(this.df).serialize(gen, null);
+        while (this.df.hasNext(this.isInTransaction)) {
+            this.objGen.transform(this.df).serialize(gen, serializerProvider);
         }
         gen.writeEndArray();
-        this.df.close();
+        this.df.close(this.isInTransaction);
     }
 
     /**
@@ -77,12 +81,6 @@ public class DataTableJSONDataSource implements JSONDataSource {
                     break;
                 case INT:
                     objNode.put(name, df.getInt(name));
-                    break;
-                case LONG:
-                    objNode.put(name, df.getLong(name));
-                    break;
-                case DOUBLE:
-                    objNode.put(name, df.getDouble(name));
                     break;
                 case FLOAT:
                     objNode.put(name, df.getFloat(name));

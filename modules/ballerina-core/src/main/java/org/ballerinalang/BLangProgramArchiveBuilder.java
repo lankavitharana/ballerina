@@ -21,6 +21,7 @@ import org.ballerinalang.model.BLangPackage;
 import org.ballerinalang.model.BLangProgram;
 import org.ballerinalang.util.program.BLangPackages;
 import org.ballerinalang.util.repository.BLangProgramArchive;
+import org.ballerinalang.util.repository.BuiltinPackageRepository;
 import org.ballerinalang.util.repository.PackageRepository;
 
 import java.io.ByteArrayInputStream;
@@ -41,6 +42,7 @@ import java.util.Map;
  * This class provides helper methods to create main and service program archives.
  *
  * @since 0.8.0
+ * @deprecated
  */
 public class BLangProgramArchiveBuilder {
 
@@ -102,6 +104,11 @@ public class BLangProgramArchiveBuilder {
     private void addProgramToArchive(BLangProgram bLangProgram, FileSystem zipFS) throws IOException {
 
         for (BLangPackage bLangPackage : bLangProgram.getPackages()) {
+            // Skip coping packages loaded by built-in repositories
+            if (bLangPackage.getPackageRepository() instanceof BuiltinPackageRepository) {
+                continue;
+            }
+
             if (bLangPackage.getPackagePath().equals(".")) {
                 PackageRepository.PackageSource packageSource =
                         bLangPackage.getPackageRepository().loadFile(bLangProgram.getProgramFilePath());
@@ -109,7 +116,7 @@ public class BLangProgramArchiveBuilder {
                 continue;
             }
 
-            Path packagePath = BLangPackages.getPathFromPackagePath(bLangPackage.getPackagePath());
+            Path packagePath = BLangPackages.convertToPackagePath(bLangPackage.getPackagePath());
             PackageRepository.PackageSource packageSource =
                     bLangPackage.getPackageRepository().loadPackage(packagePath);
             addPackageSourceToArchive(packageSource, packagePath, zipFS);

@@ -24,9 +24,14 @@ import org.ballerinalang.services.dispatchers.http.Constants;
 import org.wso2.carbon.messaging.CarbonMessage;
 import org.wso2.carbon.messaging.DefaultCarbonMessage;
 import org.wso2.carbon.messaging.Header;
+import org.wso2.carbon.messaging.StatusCarbonMessage;
+import org.wso2.carbon.messaging.TextCarbonMessage;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import javax.websocket.Session;
 
 /**
  * Util Class contains method for generating a message.
@@ -79,6 +84,56 @@ public class MessageUtils {
             carbonMessage.setAlreadyRead(true);
         }
 
+        return carbonMessage;
+    }
+
+    public static CarbonMessage generateWebSocketTextMessage(String text, Session session, String path) {
+        TextCarbonMessage textMessage = new TextCarbonMessage(text);
+        return setWebSocketCommonProperties(textMessage, session, path);
+    }
+
+    public static CarbonMessage generateWebSocketOnOpenMessage(Session session, String path) {
+        StatusCarbonMessage statusCarbonMessage = new StatusCarbonMessage(
+                org.wso2.carbon.messaging.Constants.STATUS_OPEN, 0, null);
+        statusCarbonMessage.setProperty(org.ballerinalang.services.dispatchers.ws.Constants.CONNECTION, org
+                .ballerinalang.services.dispatchers.ws.Constants.UPGRADE);
+        statusCarbonMessage.setProperty(org.ballerinalang.services.dispatchers.ws.Constants.UPGRADE, org
+                .ballerinalang.services.dispatchers.ws.Constants.WEBSOCKET_UPGRADE);
+        return setWebSocketCommonProperties(statusCarbonMessage, session, path);
+    }
+
+    public static CarbonMessage generateWebSocketOnOpenMessage(Session session, String path,
+                                                               Map<String, String> headers) {
+        StatusCarbonMessage statusCarbonMessage = new StatusCarbonMessage(
+                org.wso2.carbon.messaging.Constants.STATUS_OPEN, 0, null);
+        statusCarbonMessage.setProperty(org.ballerinalang.services.dispatchers.ws.Constants.CONNECTION, org
+                .ballerinalang.services.dispatchers.ws.Constants.UPGRADE);
+        statusCarbonMessage.setProperty(org.ballerinalang.services.dispatchers.ws.Constants.UPGRADE, org
+                .ballerinalang.services.dispatchers.ws.Constants.WEBSOCKET_UPGRADE);
+        headers.entrySet().stream().forEach(
+                entry -> {
+                    statusCarbonMessage.setHeader(entry.getKey(), entry.getValue());
+                }
+        );
+        return setWebSocketCommonProperties(statusCarbonMessage, session, path);
+    }
+
+    public static CarbonMessage generateWebSocketOnCloseMessage(Session session, String path) {
+        StatusCarbonMessage statusCarbonMessage = new StatusCarbonMessage(
+                org.wso2.carbon.messaging.Constants.STATUS_CLOSE, 1000, "Normal closure");
+        return setWebSocketCommonProperties(statusCarbonMessage, session, path);
+    }
+
+    private static CarbonMessage setWebSocketCommonProperties(CarbonMessage carbonMessage, Session session,
+                                                              String path) {
+        carbonMessage.setProperty(Constants.PROTOCOL,
+                                  org.ballerinalang.services.dispatchers.ws.Constants.PROTOCOL_WEBSOCKET);
+        carbonMessage.setProperty(Constants.TO, path);
+        carbonMessage.setProperty(org.ballerinalang.services.dispatchers.ws.Constants.IS_WEBSOCKET_SERVER, true);
+        carbonMessage.setProperty(
+                org.ballerinalang.services.dispatchers.ws.Constants.WEBSOCKET_SERVER_SESSION, session);
+        carbonMessage.setProperty(org.ballerinalang.services.dispatchers.ws.Constants.WEBSOCKET_CLIENT_SESSIONS_LIST,
+                                  new LinkedList<>());
         return carbonMessage;
     }
 

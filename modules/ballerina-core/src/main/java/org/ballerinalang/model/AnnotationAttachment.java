@@ -18,8 +18,11 @@
 
 package org.ballerinalang.model;
 
+import org.ballerinalang.model.values.BValue;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * {@code Annotation} represents an Annotation node in Ballerina.
@@ -34,16 +37,19 @@ public class AnnotationAttachment implements Node {
     private String name;
     private String pkgName;
     private String pkgPath;
-    private String value;
-    private Map<String, String> keyValPairs = new HashMap<>();
-    private Map<SymbolName, String> elementPair = new HashMap<>();
+    private Map<String, AnnotationAttributeValue> attributeNameValPairs = new HashMap<>();
     private NodeLocation location;
-
-    public AnnotationAttachment(NodeLocation location, String name, String value, Map<SymbolName, String> keyValPairs) {
+    private WhiteSpaceDescriptor whiteSpaceDescriptor;
+    AnnotationAttachmentPoint attachedPoint;
+    
+    public AnnotationAttachment(NodeLocation location, WhiteSpaceDescriptor whiteSpaceDescriptor, String name,
+                                String pkgName, String pkgPath, Map<String, AnnotationAttributeValue> fieldValPairs) {
         this.location = location;
+        this.whiteSpaceDescriptor = whiteSpaceDescriptor;
         this.name = name;
-        this.value = value;
-        this.elementPair = keyValPairs;
+        this.pkgName = pkgName;
+        this.pkgPath = pkgPath;
+        this.attributeNameValPairs = fieldValPairs;
     }
 
     /**
@@ -55,59 +61,42 @@ public class AnnotationAttachment implements Node {
         return name;
     }
 
+    /**
+     * Get the package name of the annotation.
+     * 
+     * @return Package name of the annotation
+     */
     public String getPkgName() {
         return pkgName;
     }
 
+    /**
+     * Get the package path of the annotation.
+     * 
+     * @return Package path of the annotation
+     */
     public String getPkgPath() {
         return pkgPath;
     }
-
+    
     /**
-     * Get the value of the annotation.
-     *
-     * @return value of the annotation
-     */
-    public String getValue() {
-        return value;
-    }
-
-    /**
-     * Get Key-Value pairs in the annotation.
+     * Get Key-Value pairs of fields in the annotation.
      *
      * @return all Key-Value pairs
      */
-    public Map getKeyValuePairs() {
-        return keyValPairs;
+    public Map<String, AnnotationAttributeValue> getAttributeNameValuePairs() {
+        return attributeNameValPairs;
     }
 
     /**
      * Get the value of the Key-Value pair.
      *
-     * @param key key
-     * @return value of the Key-Value pair
+     * @param attributeName attribute name
+     * @return value of the attribute
      */
-    public String getValueOfKeyValuePair(String key) {
-        return keyValPairs.get(key);
+    public AnnotationAttributeValue getAttribute(String attributeName) {
+        return attributeNameValPairs.get(attributeName);
     }
-
-    /**
-     * Get all element pairs defined with an annotation.
-     * @return all element paris with key-values.
-     */
-    public Map getElementPairs() {
-        return elementPair;
-    }
-
-    /**
-     * Get the value of the symbol in an annotation.
-     * @param symbolName key of the element
-     * @return value of the element
-     */
-    public String getValueOfElementPair(SymbolName symbolName) {
-        return elementPair.get(symbolName);
-    }
-
 
     @Override
     public void accept(NodeVisitor visitor) {
@@ -120,44 +109,146 @@ public class AnnotationAttachment implements Node {
     }
 
     /**
+     * Set the whitespace descriptor for this node.
+     *
+     * @param whiteSpaceDescriptor descriptor
+     */
+    public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+        this.whiteSpaceDescriptor = whiteSpaceDescriptor;
+    }
+
+    @Override
+    public WhiteSpaceDescriptor getWhiteSpaceDescriptor() {
+        return whiteSpaceDescriptor;
+    }
+
+    /**
+     * Set the construct where this annotation is attached.
+     * 
+     * @param attachedPoint Where an annotation can be attached
+     */
+    public void setAttachedPoint(AnnotationAttachmentPoint attachedPoint) {
+        this.attachedPoint = attachedPoint;
+    }
+    
+    /**
+     * Get the construct where this annotation is attached.
+     * 
+     * @return the attachedPoint
+     */
+    public AnnotationAttachmentPoint getAttachedPoint() {
+        return attachedPoint;
+    }
+
+    /**
+     * Add a attribute name-value pair for the annotation.
+     * 
+     * @param name Name of the attribute
+     * @param value Value of the attribute
+     */
+    public void addAttributeNameValuePair(String name, AnnotationAttributeValue value) {
+        this.attributeNameValPairs.put(name, value);
+    }
+    
+    @Override
+    public String toString() {
+        String nameValuePairs = attributeNameValPairs.entrySet().stream()
+                .map(nameValue -> nameValue.getKey() + ":" + nameValue.getValue().toString())
+                .collect(Collectors.joining(", "));
+        
+        return "@" + (pkgName == null ? "" : pkgName + ":") + name + "{" + nameValuePairs + "}";
+    }
+    
+    
+    /**
      * Builds an Annotation from parser events.
      *
      * @since 0.8.0
      */
     public static class AnnotationBuilder {
         private NodeLocation location;
+        private WhiteSpaceDescriptor whiteSpaceDescriptor;
         private String name;
         private String pkgName;
         private String pkgPath;
-        private String value;
-        private Map<SymbolName, String> keyValPairs = new HashMap<>();
+        private Map<String, AnnotationAttributeValue> attributeNameValPairs = new HashMap<>();
 
+        /**
+         * Set the source location of the annotation.
+         * 
+         * @param location Source location of the annotation
+         */
         public void setNodeLocation(NodeLocation location) {
             this.location = location;
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+            this.whiteSpaceDescriptor = whiteSpaceDescriptor;
         }
 
+        /**
+         * Set the name of the annotation.
+         * 
+         * @param string Name of the annotation
+         */
+        public void setName(String string) {
+            this.name = string;
+        }
+
+        /**
+         * Set the package name of the annotation.
+         * 
+         * @param pkgName Package name of the annotation
+         */
         public void setPkgName(String pkgName) {
             this.pkgName = pkgName;
         }
 
+        /**
+         * Set the package path of the annotation.
+         * 
+         * @param pkgPath Package path of the annotation
+         */
         public void setPkgPath(String pkgPath) {
             this.pkgPath = pkgPath;
         }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        public void addKeyValuePair(SymbolName key, String value) {
-            this.keyValPairs.put(key, value);
+        
+        /**
+         * Add a attribute name-value pair for the annotation.
+         * 
+         * @param name Name of the attribute
+         * @param value Value of the attribute
+         */
+        public void addAttributeNameValuePair(String name, AnnotationAttributeValue value) {
+            this.attributeNameValPairs.put(name, value);
         }
 
         public AnnotationAttachment build() {
-            return new AnnotationAttachment(location, name, value, keyValPairs);
+            return new AnnotationAttachment(location, whiteSpaceDescriptor, name, pkgName,
+                    pkgPath, attributeNameValPairs);
         }
+    }
+
+
+    /**
+     * Get value of an annotation with a single literal attribute.
+     * @return string value of the only attribute of the annotation.
+     */
+    public String getValue() {
+        if (attributeNameValPairs.isEmpty()) {
+            return null;
+        }
+        
+        if (attributeNameValPairs.size() > 1) {
+            throw new IllegalAccessError("annotation contains multiple attributes");
+        }
+        
+        BValue listeralVal = attributeNameValPairs.values().toArray(new AnnotationAttributeValue[0])[0]
+                .getLiteralValue();
+        if (listeralVal != null) {
+            return listeralVal.stringValue();
+        }
+        
+        return null;
     }
 }

@@ -1,8 +1,12 @@
 import ballerina.net.http;
-@http:BasePath ("/echo")
-service echo {
-    
-    @http:POST
+
+@http:configuration {basePath:"/echo"}
+service<http> echo {
+
+    @http:resourceConfig {
+        methods:["POST"],
+        path:"/"
+    }
     resource echo (message m) {
         http:convertToResponse(m);
         reply m;

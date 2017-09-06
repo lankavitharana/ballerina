@@ -22,6 +22,9 @@ import org.ballerinalang.model.builder.CallableUnitGroupBuilder;
 import org.ballerinalang.model.statements.VariableDefStmt;
 import org.ballerinalang.model.symbols.BLangSymbol;
 import org.ballerinalang.model.types.BType;
+import org.ballerinalang.model.types.SimpleTypeName;
+import org.ballerinalang.model.types.TypeSignature;
+import org.ballerinalang.model.types.TypeTags;
 import org.ballerinalang.model.values.BValue;
 
 import java.util.Collections;
@@ -45,8 +48,10 @@ import java.util.Map;
  */
 public class BallerinaConnectorDef extends BType implements Connector, CompilationUnit {
     private NodeLocation location;
+    private WhiteSpaceDescriptor whiteSpaceDescriptor;
 
     // BLangSymbol related attributes
+    protected Identifier identifier;
     protected boolean isPublic;
     protected boolean isNative;
     private AnnotationAttachment[] annotations;
@@ -54,8 +59,12 @@ public class BallerinaConnectorDef extends BType implements Connector, Compilati
     private BallerinaAction[] actions;
     private VariableDefStmt[] variableDefStmts;
     private int sizeOfConnectorMem;
+    private boolean isFilterConnector;
+    private SimpleTypeName filterSupportedType;
+    private BType filteredType;
 
     private BallerinaFunction initFunction;
+    private BallerinaAction initAction;
 
     // Scope related variables
     private Map<SymbolName, BLangSymbol> symbolMap;
@@ -99,12 +108,44 @@ public class BallerinaConnectorDef extends BType implements Connector, Compilati
         this.initFunction = initFunction;
     }
 
+    public BallerinaAction getInitAction() {
+        return initAction;
+    }
+
+    public void setInitAction(BallerinaAction initAction) {
+        this.initAction = initAction;
+    }
+
     public void setSizeOfConnectorMem(int sizeOfConnectorMem) {
         this.sizeOfConnectorMem = sizeOfConnectorMem;
     }
 
     public int getSizeOfConnectorMem() {
         return sizeOfConnectorMem;
+    }
+
+    public boolean isFilterConnector() {
+        return isFilterConnector;
+    }
+
+    public void setFilterConnector(boolean filterConnector) {
+        isFilterConnector = filterConnector;
+    }
+
+    public SimpleTypeName getFilterSupportedType() {
+        return filterSupportedType;
+    }
+
+    public void setFilterSupportedType(SimpleTypeName filterSupportedType) {
+        this.filterSupportedType = filterSupportedType;
+    }
+
+    public BType getFilteredType() {
+        return filteredType;
+    }
+
+    public void setFilteredType(BType filteredType) {
+        this.filteredType = filteredType;
     }
 
 
@@ -120,17 +161,47 @@ public class BallerinaConnectorDef extends BType implements Connector, Compilati
         return location;
     }
 
+    public void setWhiteSpaceDescriptor(WhiteSpaceDescriptor whiteSpaceDescriptor) {
+        this.whiteSpaceDescriptor = whiteSpaceDescriptor;
+    }
+
+    @Override
+    public WhiteSpaceDescriptor getWhiteSpaceDescriptor() {
+        return whiteSpaceDescriptor;
+    }
+
 
     // Methods in BLangSymbol interface
 
     @Override
-    public <V extends BValue> V getDefaultValue() {
+    public <V extends BValue> V getZeroValue() {
         return null;
+    }
+
+    @Override
+    public <V extends BValue> V getEmptyValue() {
+        return null;
+    }
+
+    @Override
+    public TypeSignature getSig() {
+        String packagePath = (pkgPath == null) ? "." : pkgPath;
+        return new TypeSignature(TypeSignature.SIG_CONNECTOR, packagePath, typeName);
+    }
+
+    @Override
+    public int getTag() {
+        return TypeTags.CONNECTOR_TAG;
     }
 
     @Override
     public String getName() {
         return typeName;
+    }
+
+    @Override
+    public Identifier getIdentifier() {
+        return identifier;
     }
 
     @Override
@@ -186,6 +257,22 @@ public class BallerinaConnectorDef extends BType implements Connector, Compilati
         return Collections.unmodifiableMap(this.symbolMap);
     }
 
+    public boolean equals(Object obj) {
+        if (obj instanceof BallerinaConnectorDef) {
+            BallerinaConnectorDef other = (BallerinaConnectorDef) obj;
+                if (this.actions.length == other.actions.length) {
+                    for (int i = 0; i < this.actions.length; i++) {
+                        if (!this.actions[i].equals(other.actions[i])) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+
+        return false;
+    }
+
     public BLangSymbol resolveMembers(SymbolName name) {
         return symbolMap.get(name);
     }
@@ -205,9 +292,11 @@ public class BallerinaConnectorDef extends BType implements Connector, Compilati
 
         public BallerinaConnectorDef buildConnector() {
             this.connectorDef.location = this.location;
-            this.connectorDef.typeName = this.name;
+            this.connectorDef.whiteSpaceDescriptor = this.whiteSpaceDescriptor;
+            this.connectorDef.identifier = this.identifier;
+            this.connectorDef.typeName = this.identifier.getName();
             this.connectorDef.pkgPath = this.pkgPath;
-            this.connectorDef.symbolName = new SymbolName(name, pkgPath);
+            this.connectorDef.symbolName = new SymbolName(identifier.getName(), pkgPath);
 
             this.connectorDef.annotations = this.annotationList.toArray(
                     new AnnotationAttachment[this.annotationList.size()]);

@@ -45,9 +45,9 @@ public class WorkerCallback extends DefaultBalCallback {
 
     @Override
     public void done(CarbonMessage carbonMessage) {
-        BMessage bMessage = new BMessage(carbonMessage);
-        valueRef = bMessage;
-        context.getControlStack().setReturnValue(0, valueRef);
+        valueRef = carbonMessage != null ? new BMessage(carbonMessage) : null;
+        // TODO Verify: why do we need to following line
+        context.getControlStackNew().currentFrame.returnValues[0] = valueRef;
         synchronized (context) {
             context.notifyAll();
         }

@@ -19,10 +19,7 @@ package org.ballerinalang.model.expressions;
 
 import org.ballerinalang.model.NodeLocation;
 import org.ballerinalang.model.NodeVisitor;
-import org.ballerinalang.model.values.BBoolean;
-import org.ballerinalang.model.values.BValueType;
-
-import java.util.function.BiFunction;
+import org.ballerinalang.model.WhiteSpaceDescriptor;
 
 import static org.ballerinalang.model.Operator.LESS_EQUAL;
 
@@ -33,20 +30,9 @@ import static org.ballerinalang.model.Operator.LESS_EQUAL;
  */
 public class LessEqualExpression extends BinaryCompareExpression {
 
-    public static final BiFunction<BValueType, BValueType, BValueType> LESS_EQUAL_INT_FUNC =
-            (lVal, rVal) -> new BBoolean(lVal.intValue() <= rVal.intValue());
-
-    public static final BiFunction<BValueType, BValueType, BValueType> LESS_EQUAL_LONG_FUNC =
-            (lVal, rVal) -> new BBoolean(lVal.longValue() <= rVal.longValue());
-
-    public static final BiFunction<BValueType, BValueType, BValueType> LESS_EQUAL_FLOAT_FUNC =
-            (lVal, rVal) -> new BBoolean(lVal.floatValue() <= rVal.floatValue());
-
-    public static final BiFunction<BValueType, BValueType, BValueType> LESS_EQUAL_DOUBLE_FUNC =
-            (lVal, rVal) -> new BBoolean(lVal.doubleValue() <= rVal.doubleValue());
-
-    public LessEqualExpression(NodeLocation location, Expression lExpr, Expression rExpr) {
-        super(location, lExpr, LESS_EQUAL, rExpr);
+    public LessEqualExpression(NodeLocation location, WhiteSpaceDescriptor whiteSpaceDescriptor, Expression lExpr,
+                               Expression rExpr) {
+        super(location, whiteSpaceDescriptor, lExpr, LESS_EQUAL, rExpr);
     }
 
     @Override

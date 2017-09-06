@@ -17,120 +17,160 @@
 */
 package org.ballerinalang;
 
-import org.ballerinalang.bre.BLangExecutor;
-import org.ballerinalang.bre.CallableUnitInfo;
 import org.ballerinalang.bre.Context;
-import org.ballerinalang.bre.RuntimeEnvironment;
-import org.ballerinalang.bre.StackFrame;
-import org.ballerinalang.bre.nonblocking.BLangNonBlockingExecutor;
+import org.ballerinalang.bre.bvm.BLangVM;
+import org.ballerinalang.bre.bvm.BLangVMErrors;
+import org.ballerinalang.bre.bvm.BLangVMWorkers;
+import org.ballerinalang.bre.bvm.ControlStackNew;
+import org.ballerinalang.bre.bvm.StackFrame;
 import org.ballerinalang.bre.nonblocking.ModeResolver;
-import org.ballerinalang.bre.nonblocking.debugger.BLangExecutionDebugger;
-import org.ballerinalang.model.BLangPackage;
-import org.ballerinalang.model.BLangProgram;
-import org.ballerinalang.model.BallerinaFunction;
-import org.ballerinalang.model.Service;
-import org.ballerinalang.model.SymbolName;
-import org.ballerinalang.model.builder.BLangExecutionFlowBuilder;
-import org.ballerinalang.model.values.BArray;
-import org.ballerinalang.model.values.BString;
-import org.ballerinalang.model.values.BValue;
-import org.ballerinalang.services.ErrorHandlerUtils;
+import org.ballerinalang.model.types.BArrayType;
+import org.ballerinalang.model.types.BType;
+import org.ballerinalang.model.types.BTypes;
+import org.ballerinalang.model.values.BRefType;
+import org.ballerinalang.model.values.BStringArray;
 import org.ballerinalang.services.dispatchers.DispatcherRegistry;
-import org.ballerinalang.util.debugger.DebugManager;
+import org.ballerinalang.util.codegen.FunctionInfo;
+import org.ballerinalang.util.codegen.PackageInfo;
+import org.ballerinalang.util.codegen.ProgramFile;
+import org.ballerinalang.util.codegen.ServiceInfo;
+import org.ballerinalang.util.codegen.WorkerInfo;
+import org.ballerinalang.util.debugger.VMDebugManager;
+import org.ballerinalang.util.exceptions.BLangExceptionHelper;
 import org.ballerinalang.util.exceptions.BLangRuntimeException;
-
-import java.util.AbstractMap;
+import org.ballerinalang.util.exceptions.BallerinaException;
+import org.ballerinalang.util.exceptions.RuntimeErrors;
+import org.ballerinalang.util.program.BLangFunctions;
 
 /**
- * {@code BLangProgramRunner} runs main and service programs.
+ * This class contains utilities to execute Ballerina main and service programs.
  *
  * @since 0.8.0
  */
 public class BLangProgramRunner {
 
-    public void startServices(BLangProgram bLangProgram) {
-        BLangPackage[] servicePackages = bLangProgram.getServicePackages();
-        if (servicePackages.length == 0) {
-            throw new RuntimeException("no service(s) found in '" + bLangProgram.getProgramFilePath() + "'");
+    public static void runService(ProgramFile programFile) {
+        if (!programFile.isServiceEPAvailable()) {
+            throw new BallerinaException("no services found in '" + programFile.getProgramFilePath() + "'");
         }
 
+        // Get the service package
+        PackageInfo servicesPackage = programFile.getEntryPackage();
+        if (servicesPackage == null) {
+            throw new BallerinaException("no services found in '" + programFile.getProgramFilePath() + "'");
+        }
+
+        // This is required to invoke package/service init functions;
+        Context bContext = new Context(programFile);
+        bContext.disableNonBlocking = true;
+
+        // Invoke package init function
+        BLangFunctions.invokePackageInitFunction(programFile, servicesPackage.getInitFunctionInfo(), bContext);
+
         int serviceCount = 0;
-        BLangExecutionFlowBuilder flowBuilder = new BLangExecutionFlowBuilder();
-        for (BLangPackage servicePackage : servicePackages) {
-            for (Service service : servicePackage.getServices()) {
-                serviceCount++;
-                service.setBLangProgram(bLangProgram);
-                DispatcherRegistry.getInstance().getServiceDispatchers().forEach((protocol, dispatcher) ->
-                        dispatcher.serviceRegistered(service));
-                // Build Flow for Non-Blocking execution.
-                service.accept(flowBuilder);
+        for (ServiceInfo serviceInfo : servicesPackage.getServiceInfoEntries()) {
+            // Invoke service init function
+            bContext.setServiceInfo(serviceInfo);
+            BLangFunctions.invokeFunction(programFile, serviceInfo.getInitFunctionInfo(), bContext);
+            if (bContext.getError() != null) {
+                String stackTraceStr = BLangVMErrors.getPrintableStackTrace(bContext.getError());
+                throw new BLangRuntimeException("error: " + stackTraceStr);
             }
+
+            if (!DispatcherRegistry.getInstance().protocolPkgExist(serviceInfo.getProtocolPkgPath())) {
+                throw BLangExceptionHelper.getRuntimeException(RuntimeErrors.INVALID_SERVICE_PROTOCOL,
+                        serviceInfo.getProtocolPkgPath());
+            }
+            // Deploy service
+            DispatcherRegistry.getInstance().getServiceDispatcherFromPkg(serviceInfo.getProtocolPkgPath())
+                    .serviceRegistered(serviceInfo);
+            serviceCount++;
         }
 
         if (serviceCount == 0) {
-            throw new RuntimeException("no service(s) found in '" + bLangProgram.getProgramFilePath() + "'");
-        }
-        if (ModeResolver.getInstance().isDebugEnabled()) {
-            DebugManager debugManager = DebugManager.getInstance();
-            // This will start the websocket server.
-            debugManager.init();
+            throw new BallerinaException("no services found in '" + programFile.getProgramFilePath() + "'");
         }
 
-        // Create a runtime environment for this Ballerina application
-        RuntimeEnvironment runtimeEnv = RuntimeEnvironment.get(bLangProgram);
-        bLangProgram.setRuntimeEnvironment(runtimeEnv);
+        if (ModeResolver.getInstance().isDebugEnabled()) {
+            VMDebugManager debugManager = VMDebugManager.getInstance();
+            // This will start the websocket server.
+            debugManager.serviceInit();
+            debugManager.setDebugEnabled(true);
+        }
     }
 
-    public void runMain(BLangProgram bLangProgram, String[] args) {
-        Context bContext = new Context();
-        BallerinaFunction mainFunction = bLangProgram.getMainFunction();
-
-        // Build flow for Non-Blocking execution.
-        mainFunction.accept(new BLangExecutionFlowBuilder());
-        try {
-            BValue[] argValues = new BValue[mainFunction.getStackFrameSize()];
-            BValue[] cacheValues = new BValue[mainFunction.getTempStackFrameSize()];
-
-            BArray<BString> arrayArgs = new BArray<>(BString.class);
-            for (int i = 0; i < args.length; i++) {
-                arrayArgs.add(i, new BString(args[i]));
-            }
-
-            argValues[0] = arrayArgs;
-
-            CallableUnitInfo functionInfo = new CallableUnitInfo(mainFunction.getName(), mainFunction.getPackagePath(),
-                    mainFunction.getNodeLocation());
-
-            StackFrame stackFrame = new StackFrame(argValues, new BValue[0], cacheValues, functionInfo);
-            bContext.getControlStack().pushFrame(stackFrame);
-
-            // Invoke main function
-            RuntimeEnvironment runtimeEnv = RuntimeEnvironment.get(bLangProgram);
-            if (ModeResolver.getInstance().isDebugEnabled()) {
-                stackFrame.variables.put(new SymbolName("args"), new AbstractMap.SimpleEntry<>(0, "Arg"));
-                DebugManager debugManager = DebugManager.getInstance();
-                // This will start the websocket server.
-                debugManager.init();
-                debugManager.waitTillClientConnect();
-                BLangExecutionDebugger debugger = new BLangExecutionDebugger(runtimeEnv, bContext);
-                debugManager.setDebugger(debugger);
-                bContext.setExecutor(debugger);
-                debugger.continueExecution(mainFunction.getCallableUnitBody());
-                debugManager.holdON();
-            } else if (ModeResolver.getInstance().isNonblockingEnabled()) {
-                BLangNonBlockingExecutor executor = new BLangNonBlockingExecutor(runtimeEnv, bContext);
-                bContext.setExecutor(executor);
-                executor.continueExecution(mainFunction.getCallableUnitBody());
-            } else {
-                BLangExecutor executor = new BLangExecutor(runtimeEnv, bContext);
-                mainFunction.getCallableUnitBody().execute(executor);
-            }
-
-            bContext.getControlStack().popFrame();
-        } catch (Throwable ex) {
-            String errorMsg = ErrorHandlerUtils.getErrorMessage(ex);
-            String stacktrace = ErrorHandlerUtils.getMainFuncStackTrace(bContext, ex);
-            throw new BLangRuntimeException(errorMsg + "\n" + stacktrace);
+    public static void runMain(ProgramFile programFile, String[] args) {
+        if (!programFile.isMainEPAvailable()) {
+            throw new BallerinaException("main function not found in  '" + programFile.getProgramFilePath() + "'");
         }
+
+        // Get the main entry package
+        PackageInfo mainPkgInfo = programFile.getEntryPackage();
+        if (mainPkgInfo == null) {
+            throw new BallerinaException("main function not found in  '" + programFile.getProgramFilePath() + "'");
+        }
+
+        // Non blocking is not supported in the main program flow..
+        Context bContext = new Context(programFile);
+        bContext.disableNonBlocking = true;
+
+        // Invoke package init function
+        FunctionInfo mainFuncInfo = getMainFunction(mainPkgInfo);
+        BLangFunctions.invokePackageInitFunction(programFile, mainPkgInfo.getInitFunctionInfo(), bContext);
+
+        // Prepare main function arguments
+        BStringArray arrayArgs = new BStringArray();
+        for (int i = 0; i < args.length; i++) {
+            arrayArgs.add(i, args[i]);
+        }
+
+        WorkerInfo defaultWorkerInfo = mainFuncInfo.getDefaultWorkerInfo();
+
+        // Execute workers
+        StackFrame callerSF = new StackFrame(mainPkgInfo, -1, new int[0]);
+        callerSF.setRefRegs(new BRefType[1]);
+        callerSF.getRefRegs()[0] = arrayArgs;
+        int[] argRegs = {0};
+        BLangVMWorkers.invoke(programFile, mainFuncInfo, callerSF, argRegs);
+
+        StackFrame stackFrame = new StackFrame(mainFuncInfo, defaultWorkerInfo, -1, new int[0]);
+        stackFrame.getRefLocalVars()[0] = arrayArgs;
+        ControlStackNew controlStackNew = bContext.getControlStackNew();
+        controlStackNew.pushFrame(stackFrame);
+
+        BLangVM bLangVM = new BLangVM(programFile);
+        bContext.setStartIP(defaultWorkerInfo.getCodeAttributeInfo().getCodeAddrs());
+        if (ModeResolver.getInstance().isDebugEnabled()) {
+            VMDebugManager debugManager = VMDebugManager.getInstance();
+            // This will start the websocket server.
+            debugManager.mainInit(programFile, bContext);
+            debugManager.holdON();
+        } else {
+            bLangVM.run(bContext);
+        }
+
+        if (bContext.getError() != null) {
+            String stackTraceStr = BLangVMErrors.getPrintableStackTrace(bContext.getError());
+            throw new BLangRuntimeException("error: " + stackTraceStr);
+        }
+    }
+
+    private static FunctionInfo getMainFunction(PackageInfo mainPkgInfo) {
+        String errorMsg = "main function not found in  '" +
+                mainPkgInfo.getProgramFile().getProgramFilePath() + "'";
+
+        FunctionInfo mainFuncInfo = mainPkgInfo.getFunctionInfo("main");
+        if (mainFuncInfo == null) {
+            throw new BallerinaException(errorMsg);
+        }
+
+        BType[] paramTypes = mainFuncInfo.getParamTypes();
+        BType[] retParamTypes = mainFuncInfo.getRetParamTypes();
+        BArrayType argsType = new BArrayType(BTypes.typeString);
+        if (paramTypes.length != 1 || !paramTypes[0].equals(argsType) || retParamTypes.length != 0) {
+            throw new BallerinaException(errorMsg);
+        }
+
+        return mainFuncInfo;
     }
 }

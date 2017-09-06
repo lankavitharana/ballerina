@@ -18,7 +18,6 @@
 
 package org.ballerinalang.services;
 
-import org.ballerinalang.util.exceptions.BallerinaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.messaging.CarbonCallback;
@@ -41,8 +40,9 @@ public class DefaultServerConnectorErrorHandler implements ServerConnectorErrorH
     }
 
     @Override
-    public void handleError(Exception exception, CarbonMessage cMsg, CarbonCallback callback) throws Exception {
-        throw new BallerinaException(exception);
+    public void handleError(Exception exception, CarbonMessage cMsg, CarbonCallback callback) {
+        ErrorHandlerUtils.printError(exception);
+        log.error("unhandled error in server connector, " + exception.getMessage(), exception);
     }
 
     @Override
