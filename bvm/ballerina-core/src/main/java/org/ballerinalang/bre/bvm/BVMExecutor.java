@@ -139,8 +139,12 @@ public class BVMExecutor {
         infectResourceFunction(strandCallback, strand);
         BLangVMUtils.setServiceInfo(strand, serviceInfo);
 
-        StackFrame idf = new StackFrame(resourceInfo, resourceInfo.defaultWorkerInfo.codeAttributeInfo, -1,
-                                        FunctionFlags.NOTHING, resourceInfo.workerSendInChannels);
+//        StackFrame idf = new StackFrame(resourceInfo, resourceInfo.defaultWorkerInfo.codeAttributeInfo, -1,
+//                                        FunctionFlags.NOTHING, resourceInfo.workerSendInChannels);
+        StackFrame idf = strand.stackFramePool.borrowObject();
+        idf.init(resourceInfo, resourceInfo.defaultWorkerInfo.codeAttributeInfo, -1,
+                FunctionFlags.NOTHING, resourceInfo.workerSendInChannels);
+
         copyArgValues(args, idf, resourceInfo.paramTypes);
         strand.pushFrame(idf);
         // Start observation after pushing the stack frame
@@ -175,8 +179,13 @@ public class BVMExecutor {
                 callableInfo.workerSendInChannels);
         Strand strand = new Strand(programFile, callableInfo.getName(), globalProps, strandCallback);
 
-        StackFrame idf = new StackFrame(callableInfo, callableInfo.defaultWorkerInfo.codeAttributeInfo,
+//        StackFrame idf = new StackFrame(callableInfo, callableInfo.defaultWorkerInfo.codeAttributeInfo,
+//                -1, FunctionFlags.NOTHING, callableInfo.workerSendInChannels);
+
+        StackFrame idf = strand.stackFramePool.borrowObject();
+        idf.init(callableInfo, callableInfo.defaultWorkerInfo.codeAttributeInfo,
                 -1, FunctionFlags.NOTHING, callableInfo.workerSendInChannels);
+
         copyArgValues(args, idf, callableInfo.paramTypes);
         strand.pushFrame(idf);
 

@@ -65,6 +65,8 @@ public class Strand {
 
     private TransactionLocalContext transactionStrandContext;
 
+    public StackFramePool stackFramePool;
+
     public Strand(ProgramFile programFile, String name, Map<String, Object> properties, StrandCallback respCallback) {
         this.programFile = programFile;
         this.respCallback = respCallback;
@@ -74,6 +76,7 @@ public class Strand {
         this.id = sb.append("-").append(count.incrementAndGet()).toString();
         this.aborted = false;
         this.transactionStrandContext = null;
+        stackFramePool = new StackFramePool();
         if (programFile.debugger.debugEnabled) {
             initDebugger();
         }
@@ -100,6 +103,7 @@ public class Strand {
 
     public StackFrame popFrame() {
         StackFrame poppedFrame = this.currentFrame;
+        stackFramePool.returnObject(poppedFrame);
         if (poppedFrame != null) {
             this.currentFrame = poppedFrame.prevFrame;
         }

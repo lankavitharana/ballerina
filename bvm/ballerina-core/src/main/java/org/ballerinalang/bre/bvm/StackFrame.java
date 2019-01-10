@@ -73,6 +73,14 @@ public class StackFrame {
 
     public CallableUnitInfo.ChannelDetails[] workerSendInChannels;
 
+    public StackFrame() {
+        this.longRegs = new long[10];
+        this.doubleRegs = new double[10];
+        this.stringRegs = new String[10];
+        this.intRegs = new int[10];
+        this.refRegs = new BRefType[10];
+    }
+
     public StackFrame(CallableUnitInfo callableUnitInfo, CodeAttributeInfo ci, int retReg,
                       int invocationFlags, CallableUnitInfo.ChannelDetails[] workerSendInChannels) {
         if (ci.maxLongRegs > 0) {
@@ -88,6 +96,30 @@ public class StackFrame {
             this.intRegs = new int[ci.maxIntRegs];
         }
         if (ci.maxBValueRegs > 0) {
+            this.refRegs = new BRefType[ci.maxBValueRegs];
+        }
+        this.ip = ci.codeAddrs;
+        this.callableUnitInfo = callableUnitInfo;
+        this.retReg = retReg;
+        this.invocationFlags = invocationFlags;
+        this.workerSendInChannels = workerSendInChannels;
+    }
+
+    public void init(CallableUnitInfo callableUnitInfo, CodeAttributeInfo ci, int retReg,
+                      int invocationFlags, CallableUnitInfo.ChannelDetails[] workerSendInChannels) {
+        if (ci.maxLongRegs > this.longRegs.length) {
+            this.longRegs = new long[ci.maxLongRegs];
+        }
+        if (ci.maxDoubleRegs > this.doubleRegs.length) {
+            this.doubleRegs = new double[ci.maxDoubleRegs];
+        }
+        if (ci.maxStringRegs > this.stringRegs.length) {
+            this.stringRegs = new String[ci.maxStringRegs];
+        }
+        if (ci.maxIntRegs > this.intRegs.length) {
+            this.intRegs = new int[ci.maxIntRegs];
+        }
+        if (ci.maxBValueRegs > this.refRegs.length) {
             this.refRegs = new BRefType[ci.maxBValueRegs];
         }
         this.ip = ci.codeAddrs;

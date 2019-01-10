@@ -880,8 +880,13 @@ public class BVM {
     private static Strand invokeCallable(Strand strand, CallableUnitInfo callableUnitInfo,
                                        int[] argRegs, int retReg, int flags) {
         //TODO refactor when worker info is removed from compiler
-        StackFrame df = new StackFrame(callableUnitInfo, callableUnitInfo.defaultWorkerInfo
+//        StackFrame df = new StackFrame(callableUnitInfo, callableUnitInfo.defaultWorkerInfo
+//                .codeAttributeInfo, retReg, flags, callableUnitInfo.workerSendInChannels);
+
+        StackFrame df = strand.stackFramePool.borrowObject();
+        df.init(callableUnitInfo, callableUnitInfo.defaultWorkerInfo
                 .codeAttributeInfo, retReg, flags, callableUnitInfo.workerSendInChannels);
+
         copyArgValues(strand.currentFrame, df, argRegs, callableUnitInfo.paramTypes);
 
         if ((flags & FunctionFlags.ASYNC) != FunctionFlags.ASYNC) {
