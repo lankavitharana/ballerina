@@ -22,6 +22,7 @@ import org.ballerinalang.jvm.types.BField;
 import org.ballerinalang.jvm.types.BStructureType;
 import org.ballerinalang.jvm.types.BType;
 import org.ballerinalang.jvm.types.TypeTags;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.TableValue;
 
 import java.sql.SQLException;
@@ -171,11 +172,12 @@ public class TableOMDataSource extends AbstractPushOMDataSource {
                 }
             }
             if (structError) {
-                throw BallerinaErrors.createError("error in constructing the xml element from struct type data");
+                throw BallerinaErrors.createError(new StringValue("error in constructing the xml element " +
+                        "from struct type data"));
             }
         } catch (SQLException e) {
-            throw BallerinaErrors.createError(
-                    "error in retrieving struct data to construct the inner xml element:" + e.getMessage());
+            throw BallerinaErrors.createError(new StringValue("error in retrieving struct data to " +
+                    "construct the inner xml element:" + e.getMessage()));
         }
     }
 

@@ -21,6 +21,7 @@ package org.ballerinalang.langlib.map;
 import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.values.ArrayValue;
 import org.ballerinalang.jvm.values.MapValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
@@ -40,6 +41,6 @@ import org.ballerinalang.natives.annotations.ReturnType;
 public class GetKeys {
 
     public static ArrayValue keys(Strand strand, MapValue<?, ?> m) {
-        return new ArrayValue((String[]) m.getKeys());
+        return new ArrayValue((StringValue[]) m.getKeys());
     }
 }

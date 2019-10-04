@@ -30,6 +30,7 @@ import org.ballerinalang.jvm.util.exceptions.BallerinaException;
 import org.ballerinalang.jvm.values.ArrayValue;
 import org.ballerinalang.jvm.values.MapValueImpl;
 import org.ballerinalang.jvm.values.RefValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.XMLItem;
 import org.ballerinalang.jvm.values.XMLSequence;
 import org.ballerinalang.jvm.values.XMLValue;
@@ -63,7 +64,7 @@ public class JSONToXMLConverter {
      * @return XMLValue XML representation of the given JSON object
      */
     @SuppressWarnings("rawtypes")
-    public static XMLValue convertToXML(Object json, String attributePrefix, String arrayEntryTag) {
+    public static XMLValue convertToXML(Object json, String attributePrefix, StringValue arrayEntryTag) {
         XMLValue xml;
         if (json == null) {
             return new XMLSequence();
@@ -95,7 +96,7 @@ public class JSONToXMLConverter {
      * @return List of XML items generated during the traversal.
      */
     @SuppressWarnings("rawtypes")
-    private static List<XMLValue> traverseTree(Object json, String attributePrefix, String arrayEntryTag) {
+    private static List<XMLValue> traverseTree(Object json, String attributePrefix, StringValue arrayEntryTag) {
         List<XMLValue> xmlArray = new ArrayList<>();
         if (!(json instanceof RefValue)) {
             XMLValue xml = XMLFactory.parse(json.toString());
@@ -118,9 +119,9 @@ public class JSONToXMLConverter {
      * @return List of XML items generated during the traversal.
      */
     @SuppressWarnings("rawtypes")
-    private static OMElement traverseJsonNode(Object json, String nodeName, OMElement parentElement,
+    private static OMElement traverseJsonNode(Object json, StringValue nodeName, OMElement parentElement,
                                               List<XMLValue> omElementArrayList, String attributePrefix,
-                                              String arrayEntryTag) {
+                                              StringValue arrayEntryTag) {
         OMElement currentRoot = null;
         if (nodeName != null) {
             // Extract attributes and set to the immediate parent.
@@ -129,12 +130,12 @@ public class JSONToXMLConverter {
                     throw new BallerinaException("attribute cannot be an object or array");
                 }
                 if (parentElement != null) {
-                    String attributeKey = nodeName.substring(1);
+                    StringValue attributeKey = nodeName.substring(1);
                     // Validate whether the attribute name is an XML supported qualified name, according to the XML
                     // recommendation.
                     XMLValidator.validateXMLName(attributeKey);
 
-                    parentElement.addAttribute(attributeKey, json.toString(), null);
+                    parentElement.addAttribute(attributeKey.value, json.toString(), null);
                 }
                 return parentElement;
             }
@@ -142,7 +143,7 @@ public class JSONToXMLConverter {
             // Validate whether the tag name is an XML supported qualified name, according to the XML recommendation.
             XMLValidator.validateXMLName(nodeName);
 
-            currentRoot = OM_FACTORY.createOMElement(nodeName, null);
+            currentRoot = OM_FACTORY.createOMElement(nodeName.value, null);
         }
 
         if (json == null) {
@@ -151,8 +152,8 @@ public class JSONToXMLConverter {
         } else {
             switch (TypeChecker.getType(json).getTag()) {
                 case TypeTags.JSON_TAG:
-                    LinkedHashMap<String, Object> map = (MapValueImpl) json;
-                    for (Entry<String, Object> entry : map.entrySet()) {
+                    LinkedHashMap<StringValue, Object> map = (MapValueImpl) json;
+                    for (Entry<StringValue, Object> entry : map.entrySet()) {
                         currentRoot = traverseJsonNode(entry.getValue(), entry.getKey(), currentRoot,
                                 omElementArrayList, attributePrefix, arrayEntryTag);
                         if (nodeName == null) { // Outermost object

@@ -29,6 +29,7 @@ import org.ballerinalang.jvm.util.exceptions.BallerinaException;
 import org.ballerinalang.jvm.util.exceptions.RuntimeErrors;
 import org.ballerinalang.jvm.values.ErrorValue;
 import org.ballerinalang.jvm.values.RefValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.TypedescValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
@@ -80,7 +81,7 @@ public class ConstructFrom {
             if (convertType.isNilable()) {
                 return null;
             }
-            return createError(CONSTRUCT_FROM_CONVERSION_ERROR,
+            return createError(new StringValue(CONSTRUCT_FROM_CONVERSION_ERROR),
                                BLangExceptionHelper.getErrorMessage(RuntimeErrors.CANNOT_CONVERT_NIL, convertType));
         }
 
@@ -115,18 +116,18 @@ public class ConstructFrom {
             convertedValue.stamp(targetType, new ArrayList<>());
             return convertedValue;
         } catch (BallerinaException e) {
-            return createError(CONSTRUCT_FROM_CONVERSION_ERROR, e.getDetail());
+            return createError(new StringValue(CONSTRUCT_FROM_CONVERSION_ERROR), e.getDetail());
         }
     }
 
     private static ErrorValue createConversionError(Object inputValue, BType targetType) {
-        return createError(CONSTRUCT_FROM_CONVERSION_ERROR,
+        return createError(new StringValue(CONSTRUCT_FROM_CONVERSION_ERROR),
                            BLangExceptionHelper.getErrorMessage(INCOMPATIBLE_CONVERT_OPERATION,
                                                                 TypeChecker.getType(inputValue), targetType));
     }
 
     private static ErrorValue createConversionError(Object inputValue, BType targetType, String detailMessage) {
-        return createError(CONSTRUCT_FROM_CONVERSION_ERROR,
+        return createError(new StringValue(CONSTRUCT_FROM_CONVERSION_ERROR),
                            BLangExceptionHelper.getErrorMessage(INCOMPATIBLE_CONVERT_OPERATION,
                                                                 TypeChecker.getType(inputValue), targetType)
                                    .concat(": ".concat(detailMessage)));

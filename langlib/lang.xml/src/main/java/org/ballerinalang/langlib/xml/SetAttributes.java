@@ -21,6 +21,7 @@ package org.ballerinalang.langlib.xml;
 import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.util.exceptions.BLangExceptionHelper;
 import org.ballerinalang.jvm.values.MapValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.XMLValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
@@ -43,7 +44,7 @@ public class SetAttributes {
 
     public static void setAttributes(Strand strand, XMLValue<?> xml, MapValue<?, ?> attributes) {
         try {
-            xml.setAttributes((MapValue<String, ?>) attributes);
+            xml.setAttributes((MapValue<StringValue, ?>) attributes);
         } catch (Throwable e) {
             BLangExceptionHelper.handleXMLException(OPERATION, e);
         }

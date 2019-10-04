@@ -39,8 +39,8 @@ import java.util.Map;
 
 import javax.xml.namespace.QName;
 
+import static org.ballerinalang.jvm.util.BLangConstants.BSTRING_NULL_VALUE;
 import static org.ballerinalang.jvm.util.BLangConstants.STRING_EMPTY_VALUE;
-import static org.ballerinalang.jvm.util.BLangConstants.STRING_NULL_VALUE;
 import static org.ballerinalang.jvm.util.BLangConstants.XML_LANG_LIB;
 
 /**
@@ -137,31 +137,31 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
      * {@inheritDoc}
      */
     @Override
-    public String getAttribute(String localName, String namespace) {
+    public StringValue getAttribute(StringValue localName, StringValue namespace) {
         if (sequence.size() == 1) {
             return ((XMLItem) sequence.getRefValue(0)).getAttribute(localName, namespace);
         }
 
-        return STRING_NULL_VALUE;
+        return BSTRING_NULL_VALUE;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getAttribute(String localName, String namespace, String prefix) {
+    public StringValue getAttribute(StringValue localName, StringValue namespace, StringValue prefix) {
         if (sequence.size() == 1) {
             return ((XMLItem) sequence.getRefValue(0)).getAttribute(localName, namespace, prefix);
         }
 
-        return STRING_NULL_VALUE;
+        return BSTRING_NULL_VALUE;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setAttribute(String localName, String namespace, String prefix, String value) {
+    public void setAttribute(StringValue localName, StringValue namespace, StringValue prefix, StringValue value) {
         if (sequence.size() == 1) {
             ((XMLItem) sequence.getRefValue(0)).setAttribute(localName, namespace, prefix, value);
         }
@@ -171,7 +171,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
      * {@inheritDoc}
      */
     @Override
-    public MapValue<String, ?> getAttributesMap() {
+    public MapValue<StringValue, ?> getAttributesMap() {
         if (sequence.size() == 1) {
             return ((XMLItem) sequence.getRefValue(0)).getAttributesMap();
         }
@@ -180,7 +180,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
     }
 
     @Override
-    public void setAttributes(MapValue<String, ?> attributes) {
+    public void setAttributes(MapValue<StringValue, ?> attributes) {
         synchronized (this) {
             if (freezeStatus.getState() != State.UNFROZEN) {
                 FreezeUtils.handleInvalidUpdate(freezeStatus.getState(), XML_LANG_LIB);
@@ -212,7 +212,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
      * {@inheritDoc}
      */
     @Override
-    public XMLValue<?> elements(String qname) {
+    public XMLValue<?> elements(StringValue qname) {
         ArrayValue elementsSeq = new ArrayValue(new BArrayType(BTypes.typeXML));
         String qnameStr = getQname(qname).toString();
         int j = 0;
@@ -253,7 +253,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public XMLValue<?> children(String qname) {
+    public XMLValue<?> children(StringValue qname) {
         ArrayValue elementsSeq = new ArrayValue(new BArrayType(BTypes.typeXML));
         QName name = getQname(qname);
         int index = 0;
@@ -284,7 +284,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
         }
 
         if (sequence.size() != 1) {
-            throw BallerinaErrors.createError("not an " + XMLNodeType.ELEMENT);
+            throw BallerinaErrors.createError(new StringValue("not an " + XMLNodeType.ELEMENT));
         }
 
         ((XMLItem) sequence.getRefValue(0)).setChildren(seq);
@@ -302,7 +302,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
         }
 
         if (sequence.size() != 1) {
-            throw BallerinaErrors.createError("not an " + XMLNodeType.ELEMENT);
+            throw BallerinaErrors.createError(new StringValue("not an " + XMLNodeType.ELEMENT));
         }
 
         ((XMLItem) sequence.getRefValue(0)).addChildren(seq);
@@ -333,7 +333,8 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
     @Override
     public XMLValue<?> slice(long startIndex, long endIndex) {
         if (startIndex > this.sequence.size() || endIndex > this.sequence.size() || startIndex < -1 || endIndex < -1) {
-            throw BallerinaErrors.createError("index out of range: [" + startIndex + "," + endIndex + "]");
+            throw BallerinaErrors.createError(new StringValue("index out of range: ["
+                    + startIndex + "," + endIndex + "]"));
         }
 
         if (startIndex == -1) {
@@ -349,7 +350,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
         }
 
         if (startIndex > endIndex) {
-            throw BallerinaErrors.createError("invalid indices: " + startIndex + " < " + endIndex);
+            throw BallerinaErrors.createError(new StringValue("invalid indices: " + startIndex + " < " + endIndex));
         }
 
         int j = 0;
@@ -365,7 +366,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
      * {@inheritDoc}
      */
     @Override
-    public XMLValue<?> descendants(String qname) {
+    public XMLValue<?> descendants(StringValue qname) {
         List<XMLValue<?>> descendants = new ArrayList<XMLValue<?>>();
         for (int i = 0; i < sequence.size(); i++) {
             XMLItem element = (XMLItem) sequence.getRefValue(i);
@@ -511,7 +512,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
     }
 
     @Override
-    public void removeAttribute(String qname) {
+    public void removeAttribute(StringValue qname) {
         synchronized (this) {
             if (freezeStatus.getState() != State.UNFROZEN) {
                 FreezeUtils.handleInvalidUpdate(freezeStatus.getState(), XML_LANG_LIB);
@@ -519,14 +520,14 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
         }
 
         if (sequence.size() != 1) {
-            throw BallerinaErrors.createError("not an " + XMLNodeType.ELEMENT);
+            throw BallerinaErrors.createError(new StringValue("not an " + XMLNodeType.ELEMENT));
         }
 
         ((XMLItem) sequence.getRefValue(0)).removeAttribute(qname);
     }
 
     @Override
-    public void removeChildren(String qname) {
+    public void removeChildren(StringValue qname) {
         synchronized (this) {
             if (freezeStatus.getState() != State.UNFROZEN) {
                 FreezeUtils.handleInvalidUpdate(freezeStatus.getState(), XML_LANG_LIB);
@@ -534,7 +535,7 @@ public final class XMLSequence extends XMLValue<ArrayValue> {
         }
 
         if (sequence.size() != 1) {
-            throw BallerinaErrors.createError("not an " + XMLNodeType.ELEMENT);
+            throw BallerinaErrors.createError(new StringValue("not an " + XMLNodeType.ELEMENT));
         }
 
         ((XMLItem) sequence.getRefValue(0)).removeChildren(qname);

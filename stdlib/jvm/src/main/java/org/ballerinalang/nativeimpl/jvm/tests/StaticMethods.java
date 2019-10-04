@@ -53,6 +53,10 @@ public class StaticMethods {
         return s1 + s2;
     }
 
+    public static String acceptBalStringAndReturnBalString(String s1) {
+        return "prefix_" + s1;
+    }
+
     public static Integer acceptThreeParamsAndReturnSomething(Integer s1, Integer s2, Integer s3) {
         return s1 + s2 + s3;
     }

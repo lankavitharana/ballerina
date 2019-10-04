@@ -21,6 +21,7 @@ package org.ballerinalang.langlib.array;
 import org.ballerinalang.jvm.BallerinaErrors;
 import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.values.ArrayValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
@@ -45,7 +46,7 @@ public class FromBase16 {
     public static Object fromBase16(Strand strand, String str) {
         if (str.length() % 2 != 0) {
             return BallerinaErrors
-                    .createError("Invalid base16 string",
+                    .createError(new StringValue("Invalid base16 string"),
                                  "Expected an even length string, but the length of the string was: " + str.length());
         }
 
@@ -69,7 +70,7 @@ public class FromBase16 {
         }
 
         if (!invalidChars.isEmpty()) {
-            return BallerinaErrors.createError("Invalid base16 string",
+            return BallerinaErrors.createError(new StringValue("Invalid base16 string"),
                                                "Invalid character(s): " + invalidChars.toString());
         }
 

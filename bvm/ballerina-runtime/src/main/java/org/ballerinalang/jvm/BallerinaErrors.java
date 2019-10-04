@@ -27,6 +27,7 @@ import org.ballerinalang.jvm.values.ArrayValue;
 import org.ballerinalang.jvm.values.ErrorValue;
 import org.ballerinalang.jvm.values.MapValue;
 import org.ballerinalang.jvm.values.MapValueImpl;
+import org.ballerinalang.jvm.values.StringValue;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -49,7 +50,7 @@ import static org.ballerinalang.jvm.util.exceptions.RuntimeErrors.INCOMPATIBLE_C
 public class BallerinaErrors {
 
     public static final String ERROR_MESSAGE_FIELD = "message";
-    public static final String NULL_REF_EXCEPTION = "NullReferenceException";
+    public static final StringValue NULL_REF_EXCEPTION = new StringValue("NullReferenceException");
     public static final String CALL_STACK_ELEMENT = "CallStackElement";
     public static final String ERROR_CAUSE_FIELD = "cause";
     public static final String ERROR_STACK_TRACE = "stackTrace";
@@ -59,11 +60,11 @@ public class BallerinaErrors {
     public static final String GENERATE_PKG_STOP = "___stop_";
     public static final String GENERATE_OBJECT_CLASS_PREFIX = ".$value$";
 
-    public static ErrorValue createError(String reason) {
+    public static ErrorValue createError(StringValue reason) {
         return new ErrorValue(reason, new MapValueImpl<>(BTypes.typeErrorDetail));
     }
 
-    public static ErrorValue createError(String reason, String detail) {
+    public static ErrorValue createError(StringValue reason, String detail) {
         MapValueImpl<String, Object> detailMap = new MapValueImpl<>(BTypes.typeErrorDetail);
         if (detail != null) {
             detailMap.put(ERROR_MESSAGE_FIELD, detail);
@@ -71,7 +72,7 @@ public class BallerinaErrors {
         return new ErrorValue(reason, detailMap);
     }
 
-    public static ErrorValue createError(String reason, MapValue detailMap) {
+    public static ErrorValue createError(StringValue reason, MapValue detailMap) {
         return new ErrorValue(reason, detailMap);
     }
 
@@ -79,7 +80,7 @@ public class BallerinaErrors {
         if (error instanceof ErrorValue) {
             return (ErrorValue) error;
         }
-        return createError(error.getMessage());
+        return createError(new StringValue(error.getMessage()));
     }
 
     public static ErrorValue trapError(Throwable throwable) {
@@ -140,10 +141,11 @@ public class BallerinaErrors {
             detailMap.put(ERROR_MESSAGE_FIELD, e.getMessage());
         }
         if (e.getCause() != null) {
-            detailMap.put(ERROR_CAUSE_FIELD, createError(e.getCause().getClass().getName(), e.getCause().getMessage()));
+            detailMap.put(ERROR_CAUSE_FIELD, createError(new StringValue(e.getCause().getClass().getName()),
+                    e.getCause().getMessage()));
         }
 
-        return createError(e.getClass().getName(), detailMap);
+        return createError(new StringValue(e.getClass().getName()), detailMap);
     }
 
     public static Object handleResourceError(Object returnValue) {

@@ -41,8 +41,13 @@ type InstructionGenerator object {
             any val = loadIns.value;
             self.mv.visitLdcInsn(val);
         } else if (bType is bir:BTypeString) {
+            //any val = loadIns.value;
+            //self.mv.visitLdcInsn(val);
             any val = loadIns.value;
+            self.mv.visitTypeInsn(NEW, BSTRING_VALUE);
+            self.mv.visitInsn(DUP);
             self.mv.visitLdcInsn(val);
+            self.mv.visitMethodInsn(INVOKESPECIAL, BSTRING_VALUE, "<init>", io:sprintf("(L%s;)V", STRING_VALUE), false);
         } else if (bType is bir:BTypeDecimal) {
             any val = loadIns.value;
             self.mv.visitTypeInsn(NEW, DECIMAL_VALUE);
@@ -382,8 +387,8 @@ type InstructionGenerator object {
         } else if (bType is bir:BTypeByte) {
             self.mv.visitInsn(IADD);
         } else if (bType is bir:BTypeString) {
-            self.mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "concat",
-                                    io:sprintf("(L%s;)L%s;", STRING_VALUE, STRING_VALUE) , false);
+            self.mv.visitMethodInsn(INVOKEVIRTUAL, BSTRING_VALUE, "concat",
+                                    io:sprintf("(L%s;)L%s;", BSTRING_VALUE, BSTRING_VALUE) , false);
         } else if (bType is bir:BTypeDecimal) {
             self.mv.visitMethodInsn(INVOKEVIRTUAL, DECIMAL_VALUE, "add",
                 io:sprintf("(L%s;)L%s;", DECIMAL_VALUE, DECIMAL_VALUE) , false);
@@ -636,10 +641,10 @@ type InstructionGenerator object {
 
         if (varRefType is bir:BJSONType) {
             self.mv.visitMethodInsn(INVOKESTATIC, JSON_UTILS, "setElement",
-                    io:sprintf("(L%s;L%s;L%s;)V", OBJECT, STRING_VALUE, OBJECT), false);
+                    io:sprintf("(L%s;L%s;L%s;)V", OBJECT, BSTRING_VALUE, OBJECT), false);
         } else {
             self.mv.visitMethodInsn(INVOKESTATIC, MAP_UTILS, "handleMapStore",
-                                        io:sprintf("(L%s;L%s;L%s;)V", MAP_VALUE, STRING_VALUE, OBJECT),
+                                        io:sprintf("(L%s;L%s;L%s;)V", MAP_VALUE, BSTRING_VALUE, OBJECT),
                                         false);
         }
     }
@@ -654,14 +659,13 @@ type InstructionGenerator object {
         self.loadVar(mapLoadIns.keyOp.variableDcl);
 
         if (varRefType is bir:BJSONType) {
+            self.mv.visitTypeInsn(CHECKCAST, BSTRING_VALUE);
             if (mapLoadIns.optionalFieldAccess) {
-                self.mv.visitTypeInsn(CHECKCAST, STRING_VALUE);
                 self.mv.visitMethodInsn(INVOKESTATIC, JSON_UTILS, "getElementOrNil",
-                        io:sprintf("(L%s;L%s;)L%s;", OBJECT, STRING_VALUE, OBJECT), false);
+                        io:sprintf("(L%s;L%s;)L%s;", OBJECT, BSTRING_VALUE, OBJECT), false);
             } else {
-                self.mv.visitTypeInsn(CHECKCAST, STRING_VALUE);
                 self.mv.visitMethodInsn(INVOKESTATIC, JSON_UTILS, "getElement",
-                        io:sprintf("(L%s;L%s;)L%s;", OBJECT, STRING_VALUE, OBJECT), false);
+                        io:sprintf("(L%s;L%s;)L%s;", OBJECT, BSTRING_VALUE, OBJECT), false);
             }
         } else {
             if (mapLoadIns.fillingRead) {
@@ -689,7 +693,7 @@ type InstructionGenerator object {
 
         // invoke get() method, and unbox if needed
         self.mv.visitMethodInsn(INVOKEINTERFACE, OBJECT_VALUE, "get",
-                io:sprintf("(L%s;)L%s;", STRING_VALUE, OBJECT), true);
+                io:sprintf("(L%s;)L%s;", BSTRING_VALUE, OBJECT), true);
         bir:BType targetType = objectLoadIns.lhsOp.variableDcl.typeValue;
         addUnboxInsn(self.mv, targetType);
 
@@ -712,7 +716,7 @@ type InstructionGenerator object {
 
         // invoke set() method
         self.mv.visitMethodInsn(INVOKEINTERFACE, OBJECT_VALUE, "set",
-                io:sprintf("(L%s;L%s;)V", STRING_VALUE, OBJECT), true);
+                io:sprintf("(L%s;L%s;)V", BSTRING_VALUE, OBJECT), true);
     }
 
     function generateStringLoadIns(bir:FieldAccess stringLoadIns) {
@@ -724,7 +728,7 @@ type InstructionGenerator object {
 
         // invoke the `getStringAt()` method
         self.mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "getStringAt",
-                                io:sprintf("(L%s;J)L%s;", STRING_VALUE, STRING_VALUE), false);
+                                io:sprintf("(L%s;J)L%s;", BSTRING_VALUE, BSTRING_VALUE), false);
 
         // store in the target reg
         self.storeToVar(stringLoadIns.lhsOp.variableDcl);
@@ -779,7 +783,7 @@ type InstructionGenerator object {
         } else if (bType is bir:BTypeInt) {
             self.mv.visitMethodInsn(INVOKEVIRTUAL, ARRAY_VALUE, "getInt", "(J)J", false);
         } else if (bType is bir:BTypeString) {
-            self.mv.visitMethodInsn(INVOKEVIRTUAL, ARRAY_VALUE, "getString", io:sprintf("(J)L%s;", STRING_VALUE),
+            self.mv.visitMethodInsn(INVOKEVIRTUAL, ARRAY_VALUE, "getString", io:sprintf("(J)L%s;", BSTRING_VALUE),
                                         false);
         } else if (bType is bir:BTypeBoolean) {
             self.mv.visitMethodInsn(INVOKEVIRTUAL, ARRAY_VALUE, "getBoolean", "(J)Z", false);
@@ -805,7 +809,7 @@ type InstructionGenerator object {
         self.loadVar(newErrorIns.reasonOp.variableDcl);
         self.loadVar(newErrorIns.detailsOp.variableDcl);
         self.mv.visitMethodInsn(INVOKESPECIAL, ERROR_VALUE, "<init>",
-                           io:sprintf("(L%s;L%s;L%s;)V", BTYPE, STRING_VALUE, OBJECT), false);
+                           io:sprintf("(L%s;L%s;L%s;)V", BTYPE, BSTRING_VALUE, OBJECT), false);
         self.storeToVar(newErrorIns.lhsOp.variableDcl);
     }
 
@@ -912,7 +916,7 @@ type InstructionGenerator object {
         self.mv.visitTypeInsn(CHECKCAST, XML_QNAME);
         self.loadVar(newXMLElement.defaultNsURIOp.variableDcl);
         self.mv.visitMethodInsn(INVOKESTATIC, XML_FACTORY, "createXMLElement",
-                io:sprintf("(L%s;L%s;L%s;)L%s;", XML_QNAME, XML_QNAME, STRING_VALUE, XML_VALUE), false);
+                io:sprintf("(L%s;L%s;L%s;)L%s;", XML_QNAME, XML_QNAME, BSTRING_VALUE, XML_VALUE), false);
         self.storeToVar(newXMLElement.lhsOp.variableDcl);
     }
 
@@ -923,7 +927,7 @@ type InstructionGenerator object {
         self.loadVar(newXMLQName.nsURIOp.variableDcl);
         self.loadVar(newXMLQName.prefixOp.variableDcl);
         self.mv.visitMethodInsn(INVOKESPECIAL, XML_QNAME, "<init>",
-                io:sprintf("(L%s;L%s;L%s;)V", STRING_VALUE, STRING_VALUE, STRING_VALUE), false);
+                io:sprintf("(L%s;L%s;L%s;)V", BSTRING_VALUE, BSTRING_VALUE, BSTRING_VALUE), false);
         self.storeToVar(newXMLQName.lhsOp.variableDcl);
     }
 
@@ -932,21 +936,21 @@ type InstructionGenerator object {
         self.mv.visitInsn(DUP);
         self.loadVar(newStringXMLQName.stringQNameOp.variableDcl);
         self.mv.visitMethodInsn(INVOKESPECIAL, XML_QNAME, "<init>",
-                io:sprintf("(L%s;)V", STRING_VALUE), false);
+                io:sprintf("(L%s;)V", BSTRING_VALUE), false);
         self.storeToVar(newStringXMLQName.lhsOp.variableDcl);
     }
 
     function generateNewXMLTextIns(bir:NewXMLText newXMLText) {
         self.loadVar(newXMLText.textOp.variableDcl);
         self.mv.visitMethodInsn(INVOKESTATIC, XML_FACTORY, "createXMLText",
-                io:sprintf("(L%s;)L%s;", STRING_VALUE, XML_VALUE), false);
+                io:sprintf("(L%s;)L%s;", BSTRING_VALUE, XML_VALUE), false);
         self.storeToVar(newXMLText.lhsOp.variableDcl);
     }
 
     function generateNewXMLCommentIns(bir:NewXMLComment newXMLComment) {
         self.loadVar(newXMLComment.textOp.variableDcl);
         self.mv.visitMethodInsn(INVOKESTATIC, XML_FACTORY, "createXMLComment",
-                io:sprintf("(L%s;)L%s;", STRING_VALUE, XML_VALUE), false);
+                io:sprintf("(L%s;)L%s;", BSTRING_VALUE, XML_VALUE), false);
         self.storeToVar(newXMLComment.lhsOp.variableDcl);
     }
 
@@ -954,7 +958,7 @@ type InstructionGenerator object {
         self.loadVar(newXMLPI.targetOp.variableDcl);
         self.loadVar(newXMLPI.dataOp.variableDcl);
         self.mv.visitMethodInsn(INVOKESTATIC, XML_FACTORY, "createXMLProcessingInstruction",
-                io:sprintf("(L%s;L%s;)L%s;", STRING_VALUE, STRING_VALUE, XML_VALUE), false);
+                io:sprintf("(L%s;L%s;)L%s;", BSTRING_VALUE, BSTRING_VALUE, XML_VALUE), false);
         self.storeToVar(newXMLPI.lhsOp.variableDcl);
     }
 
@@ -982,7 +986,7 @@ type InstructionGenerator object {
 
         // invoke getAttribute() method
         self.mv.visitMethodInsn(INVOKEVIRTUAL, XML_VALUE, "getAttribute",
-                io:sprintf("(L%s;)L%s;", XML_QNAME, STRING_VALUE), false);
+                io:sprintf("(L%s;)L%s;", XML_QNAME, BSTRING_VALUE), false);
 
         // store in the target reg
         bir:BType targetType = xmlAttrStoreIns.lhsOp.variableDcl.typeValue;
@@ -1002,7 +1006,7 @@ type InstructionGenerator object {
 
         // invoke setAttribute() method
         self.mv.visitMethodInsn(INVOKEVIRTUAL, XML_VALUE, "setAttribute",
-                io:sprintf("(L%s;L%s;)V", XML_QNAME, STRING_VALUE), false);
+                io:sprintf("(L%s;L%s;)V", XML_QNAME, BSTRING_VALUE), false);
     }
 
     function generateXMLLoadIns(bir:FieldAccess xmlLoadIns) {
@@ -1015,7 +1019,7 @@ type InstructionGenerator object {
         if (xmlLoadIns.keyOp.variableDcl.typeValue is bir:BTypeString) {
             // invoke `children(name)` method
             self.mv.visitMethodInsn(INVOKEVIRTUAL, XML_VALUE, "children",
-                io:sprintf("(L%s;)L%s;", STRING_VALUE, XML_VALUE), false);
+                io:sprintf("(L%s;)L%s;", BSTRING_VALUE, XML_VALUE), false);
         } else {
             // invoke `getItem(index)` method
             self.mv.visitInsn(L2I);

@@ -24,6 +24,7 @@ import org.ballerinalang.jvm.types.BArrayType;
 import org.ballerinalang.jvm.types.BType;
 import org.ballerinalang.jvm.types.TypeTags;
 import org.ballerinalang.jvm.values.ArrayValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
@@ -52,8 +53,8 @@ public class ToBase64 {
         BType arrType = arr.getType();
         if (arrType.getTag() != TypeTags.ARRAY_TAG ||
                 ((BArrayType) arrType).getElementType().getTag() != TypeTags.BYTE_TAG) {
-            throw BallerinaErrors.createError(getModulePrefixedReason(ARRAY_LANG_LIB,
-                                                                      OPERATION_NOT_SUPPORTED_IDENTIFIER),
+            throw BallerinaErrors.createError(new StringValue(getModulePrefixedReason(ARRAY_LANG_LIB,
+                                                                      OPERATION_NOT_SUPPORTED_IDENTIFIER)),
                                               "toBase64() is only supported on 'byte[]'");
         }
         return Base64.getEncoder().encodeToString(arr.getBytes());

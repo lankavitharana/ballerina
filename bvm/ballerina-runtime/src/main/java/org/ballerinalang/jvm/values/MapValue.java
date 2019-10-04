@@ -34,25 +34,25 @@ import java.util.Map;
  */
 public interface MapValue<K, V> extends RefValue, CollectionValue, Map<K, V> {
 
-    Long getIntValue(String key);
+    Long getIntValue(K key);
 
-    Double getFloatValue(String key);
+    Double getFloatValue(K key);
 
-    String getStringValue(String key);
+    String getStringValue(K key);
 
-    Boolean getBooleanValue(String key);
+    Boolean getBooleanValue(K key);
 
-    MapValue<?, ?> getMapValue(String key);
+    MapValue<?, ?> getMapValue(K key);
 
-    ObjectValue getObjectValue(String key);
+    ObjectValue getObjectValue(K key);
 
-    ArrayValue getArrayValue(String key);
+    ArrayValue getArrayValue(K key);
 
-    long getDefaultableIntValue(String key);
+    long getDefaultableIntValue(K key);
 
-    V getOrThrow(Object key);
+    V getOrThrow(K key);
 
-    V fillAndGet(Object key);
+    V fillAndGet(K key);
 
     Object merge(MapValue v2, boolean checkMergeability);
 

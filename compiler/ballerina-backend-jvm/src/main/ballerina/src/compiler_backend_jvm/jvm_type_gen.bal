@@ -230,7 +230,7 @@ function generateRecordValueCreateMethod(jvm:ClassWriter cw, bir:TypeDef?[] reco
 
 function generateObjectValueCreateMethod(jvm:ClassWriter cw, bir:TypeDef?[] objectTypeDefs, bir:ModuleID moduleId) {
     jvm:MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "createObjectValue",
-        io:sprintf("(L%s;L%s;L%s;L%s;[L%s;)L%s;", STRING_VALUE, SCHEDULER, STRAND, MAP, OBJECT, OBJECT_VALUE), (), ());
+        io:sprintf("(L%s;L%s;L%s;L%s;[L%s;)L%s;", BSTRING_VALUE, SCHEDULER, STRAND, MAP, OBJECT, OBJECT_VALUE), (), ());
 
     BalToJVMIndexMap indexMap = new;
 
@@ -310,7 +310,7 @@ function generateObjectValueCreateMethod(jvm:ClassWriter cw, bir:TypeDef?[] obje
         mv.visitLdcInsn("__init");
         mv.visitVarInsn(ALOAD, argsIndex);
 
-        string methodDesc = io:sprintf("(L%s;L%s;[L%s;)L%s;", STRAND, STRING_VALUE, OBJECT, OBJECT);
+        string methodDesc = io:sprintf("(L%s;L%s;[L%s;)L%s;", STRAND, BSTRING_VALUE, OBJECT, OBJECT);
         mv.visitMethodInsn(INVOKEINTERFACE, OBJECT_VALUE, "call", methodDesc, true);
 
         bir:VariableDcl tempResult = { typeValue: "any",
@@ -1103,7 +1103,7 @@ function getTypeDesc(bir:BType bType) returns string {
     } else if (bType is bir:BTypeFloat) {
         return "D";
     } else if (bType is bir:BTypeString) {
-        return io:sprintf("L%s;", STRING_VALUE);
+        return io:sprintf("L%s;", BSTRING_VALUE);
     } else if (bType is bir:BTypeBoolean) {
         return "Z";
     } else if (bType is bir:BTypeNil) {

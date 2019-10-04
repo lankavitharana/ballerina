@@ -27,6 +27,7 @@ import org.ballerinalang.jvm.types.TypeTags;
 import org.ballerinalang.jvm.values.ArrayValue;
 import org.ballerinalang.jvm.values.DecimalValue;
 import org.ballerinalang.jvm.values.MapValueImpl;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.TableIterator;
 
 import java.io.ByteArrayInputStream;
@@ -103,12 +104,12 @@ public class TableProvider {
         return createTable(fromTableName, null, query, tableType, params);
     }
 
-    public void insertData(String tableName, MapValueImpl<String, Object> constrainedType) {
+    public void insertData(String tableName, MapValueImpl<StringValue, Object> constrainedType) {
         String sqlStmt = TableUtils.generateInsertDataStatement(tableName, constrainedType);
         prepareAndExecuteStatement(sqlStmt, constrainedType);
     }
 
-    public void deleteData(String tableName, MapValueImpl<String, Object> constrainedType) {
+    public void deleteData(String tableName, MapValueImpl<StringValue, Object> constrainedType) {
         String sqlStmt = TableUtils.generateDeleteDataStatment(tableName, constrainedType);
         prepareAndExecuteStatement(sqlStmt, constrainedType);
     }
@@ -284,7 +285,7 @@ public class TableProvider {
                         break;
                     case TypeTags.XML_TAG:
                     case TypeTags.JSON_TAG:
-                        stmt.setString(index, params.getString(index - 1));
+                        stmt.setString(index, params.getString(index - 1).value);
                         break;
                     case TypeTags.ARRAY_TAG:
                         BType elementType = ((BArrayType) paramType).getElementType();
@@ -307,7 +308,7 @@ public class TableProvider {
         }
     }
 
-    private void prepareAndExecuteStatement(String queryStatement, MapValueImpl<String, Object> constrainedType) {
+    private void prepareAndExecuteStatement(String queryStatement, MapValueImpl<StringValue, Object> constrainedType) {
         PreparedStatement stmt = null;
         Connection conn = this.getConnection();
         try {

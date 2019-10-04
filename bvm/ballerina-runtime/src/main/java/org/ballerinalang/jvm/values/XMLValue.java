@@ -117,7 +117,7 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param namespace Namespace of the attribute
      * @return Value of the attribute
      */
-    public abstract String getAttribute(String localName, String namespace);
+    public abstract StringValue getAttribute(StringValue localName, StringValue namespace);
 
     /**
      * Get the value of a single attribute as a string.
@@ -127,7 +127,7 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param prefix Prefix of the namespace
      * @return Value of the attribute
      */
-    public abstract String getAttribute(String localName, String namespace, String prefix);
+    public abstract StringValue getAttribute(StringValue localName, StringValue namespace, StringValue prefix);
 
     /**
      * Get the value of a single attribute as a string.
@@ -135,7 +135,7 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param attributeName Qualified name of the attribute
      * @return Value of the attribute
      */
-    public String getAttribute(XMLQName attributeName) {
+    public StringValue getAttribute(XMLQName attributeName) {
         return getAttribute(attributeName.getLocalName(), attributeName.getUri(), attributeName.getPrefix());
     }
 
@@ -148,7 +148,8 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param localName Local name of the attribute
      * @param value Value of the attribute
      */
-    public abstract void setAttribute(String localName, String namespace, String prefix, String value);
+    public abstract void setAttribute(StringValue localName, StringValue namespace,
+                                      StringValue prefix, StringValue value);
 
     /**
      * Set the value of a single attribute. If the attribute already exsists, then the value will be updated.
@@ -157,7 +158,7 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param attributeName Qualified name of the attribute
      * @param value Value of the attribute
      */
-    public void setAttribute(XMLQName attributeName, String value) {
+    public void setAttribute(XMLQName attributeName, StringValue value) {
         setAttribute(attributeName.getLocalName(), attributeName.getUri(), attributeName.getPrefix(), value);
     }
 
@@ -166,18 +167,18 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * 
      * @return Attributes as a {@link MapValueImpl}
      */
-    public abstract MapValue<String, ?> getAttributesMap();
+    public abstract MapValue<StringValue, ?> getAttributesMap();
 
     /**
      * Set the attributes of the XML{@link MapValueImpl}.
      * 
      * @param attributes Attributes to be set.
      */
-    public abstract void setAttributes(MapValue<String, ?> attributes);
+    public abstract void setAttributes(MapValue<StringValue, ?> attributes);
 
     /**
      * Get all the elements-type items, in the given sequence.
-     * 
+     *
      * @return All the elements-type items, in the given sequence
      */
     public abstract XMLValue<?> elements();
@@ -188,7 +189,7 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param qname qualified name of the element
      * @return All the elements-type items, that matches a given qualified name, from the this sequence.
      */
-    public abstract XMLValue<?> elements(String qname);
+    public abstract XMLValue<?> elements(StringValue qname);
 
     /**
      * Selects and concatenate all the children sequences of the elements in this sequence.
@@ -205,7 +206,7 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param qname qualified name of the children to filter
      * @return All the children that matches the given qualified name, as a sequence
      */
-    public abstract XMLValue<?> children(String qname);
+    public abstract XMLValue<?> children(StringValue qname);
 
     /**
      * Set the children of this XML. Any existing children will be removed.
@@ -251,7 +252,7 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param qname Qualified name of the descendants to filter
      * @return All the descendants that matches the given qualified name, as a sequence
      */
-    public abstract XMLValue<?> descendants(String qname);
+    public abstract XMLValue<?> descendants(StringValue qname);
 
     /**
      * Get an item from the XML sequence, at the given index.
@@ -306,9 +307,9 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * @param qname String representation of qname
      * @return constructed {@link QName}
      */
-    protected QName getQname(String qname) {
-        String nsUri;
-        String localname;
+    protected QName getQname(StringValue qname) {
+        StringValue nsUri;
+        StringValue localname;
         int rParenIndex = qname.indexOf('}');
 
         if (qname.startsWith("{") && rParenIndex > 0) {
@@ -316,10 +317,10 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
             nsUri = qname.substring(1, rParenIndex);
         } else {
             localname = qname;
-            nsUri = "";
+            nsUri = new StringValue("");
         }
 
-        return new QName(nsUri, localname);
+        return new QName(nsUri.value, localname.value);
     }
 
     /**
@@ -350,14 +351,14 @@ public abstract class XMLValue<T> implements RefValue, CollectionValue {
      * 
      * @param qname Qualified name of the attribute
      */
-    public abstract void removeAttribute(String qname);
+    public abstract void removeAttribute(StringValue qname);
 
     /**
      * Remove children matching the given name from an XML.
      * 
      * @param qname Namespace qualified name of the children to be removed.
      */
-    public abstract void removeChildren(String qname);
+    public abstract void removeChildren(StringValue qname);
 
     /**
      * {@inheritDoc}

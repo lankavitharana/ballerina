@@ -20,6 +20,7 @@ package org.ballerinalang.langlib.xml;
 
 import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.util.exceptions.BLangExceptionHelper;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.XMLValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
@@ -40,7 +41,7 @@ public class RemoveAttribute {
 
     private static final String OPERATION = "remove attribute";
 
-    public static void removeAttribute(Strand strand, XMLValue<?> xml, String qname) {
+    public static void removeAttribute(Strand strand, XMLValue<?> xml, StringValue qname) {
         try {
             xml.removeAttribute(qname);
         } catch (Throwable e) {

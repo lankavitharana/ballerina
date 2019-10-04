@@ -54,19 +54,19 @@ public class ErrorValue extends RuntimeException implements RefValue {
 
     private static final long serialVersionUID = 1L;
     private final BType type;
-    private final String reason;
+    private final StringValue reason;
     private final Object details;
 
-    public ErrorValue(String reason, Object details) {
-        super(reason);
+    public ErrorValue(StringValue reason, Object details) {
+        super(reason.value);
         this.type = new BErrorType(TypeConstants.ERROR, BTypes.typeError.getPackage(),
                 BTypes.typeString, TypeChecker.getType(details));
         this.reason = reason;
         this.details = details;
     }
 
-    public ErrorValue(BType type, String reason, Object details) {
-        super(reason);
+    public ErrorValue(BType type, StringValue reason, Object details) {
+        super(reason.value);
         this.type = type;
         this.reason = reason;
         this.details = details;
@@ -121,7 +121,7 @@ public class ErrorValue extends RuntimeException implements RefValue {
         return stringValue();
     }
 
-    public String getReason() {
+    public StringValue getReason() {
         return reason;
     }
 
@@ -199,8 +199,8 @@ public class ErrorValue extends RuntimeException implements RefValue {
     private String getErrorMessage() {
         String errorMsg = "";
         boolean reasonAdded = false;
-        if (reason != null && !reason.isEmpty()) {
-            errorMsg = reason;
+        if (reason != null && !reason.value.isEmpty()) {
+            errorMsg = reason.value;
             reasonAdded = true;
         }
         if (details != null) {

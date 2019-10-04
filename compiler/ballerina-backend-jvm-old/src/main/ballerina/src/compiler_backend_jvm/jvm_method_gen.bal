@@ -352,7 +352,7 @@ function geerateFrameClassFieldLoad(int localVarOffset, bir:VariableDcl?[] local
             mv.visitVarInsn(DSTORE, index);
         } else if (bType is bir:BTypeString) {
             mv.visitFieldInsn(GETFIELD, frameName, internal:replace(localVar.name.value, "%","_"),
-                    io:sprintf("L%s;", STRING_VALUE));
+                    io:sprintf("L%s;", BSTRING_VALUE));
             mv.visitVarInsn(ASTORE, index);
         } else if (bType is bir:BTypeDecimal) {
             mv.visitFieldInsn(GETFIELD, frameName, internal:replace(localVar.name.value, "%","_"),
@@ -446,7 +446,7 @@ function geerateFrameClassFieldUpdate(int localVarOffset, bir:VariableDcl?[] loc
         } else if (bType is bir:BTypeString) {
             mv.visitVarInsn(ALOAD, index);
             mv.visitFieldInsn(PUTFIELD, frameName, internal:replace(localVar.name.value, "%","_"),
-                    io:sprintf("L%s;", STRING_VALUE));
+                    io:sprintf("L%s;", BSTRING_VALUE));
         } else if (bType is bir:BTypeDecimal) {
             mv.visitVarInsn(ALOAD, index);
             mv.visitFieldInsn(PUTFIELD, frameName, internal:replace(localVar.name.value, "%","_"),
@@ -530,7 +530,7 @@ function getJVMTypeSign(bir:BType bType) returns string {
     } else if (bType is bir:BTypeBoolean) {
         jvmType = "Z";
     } else if (bType is bir:BTypeString) {
-        jvmType = io:sprintf("L%s;", STRING_VALUE);
+        jvmType = io:sprintf("L%s;", BSTRING_VALUE);
     } else if (bType is bir:BTypeDecimal) {
         jvmType = io:sprintf("L%s;", DECIMAL_VALUE);
     } else if (bType is bir:BMapType || bType is bir:BRecordType) {
@@ -1136,7 +1136,7 @@ function getArgTypeSignature(bir:BType bType) returns string {
     } else if (bType is bir:BTypeFloat) {
         return "D";
     } else if (bType is bir:BTypeString) {
-        return io:sprintf("L%s;", STRING_VALUE);
+        return io:sprintf("L%s;", BSTRING_VALUE);
     } else if (bType is bir:BTypeDecimal) {
         return io:sprintf("L%s;", DECIMAL_VALUE);
     } else if (bType is bir:BTypeBoolean) {
@@ -1187,7 +1187,7 @@ function generateReturnType(bir:BType? bType) returns string {
     } else if (bType is bir:BTypeFloat) {
         return ")D";
     } else if (bType is bir:BTypeString) {
-        return io:sprintf(")L%s;", STRING_VALUE);
+        return io:sprintf(")L%s;", BSTRING_VALUE);
     } else if (bType is bir:BTypeDecimal) {
         return io:sprintf(")L%s;", DECIMAL_VALUE);
     } else if (bType is bir:BTypeBoolean) {
@@ -1661,17 +1661,17 @@ function generateLambdaForDepModStopFunc(jvm:ClassWriter cw, string funcName, st
 # + targetType - target type to be casted
 # + mv - method visitor
 function castFromString(bir:BType targetType, jvm:MethodVisitor mv) {
-    mv.visitTypeInsn(CHECKCAST, STRING_VALUE);
+    mv.visitTypeInsn(CHECKCAST, BSTRING_VALUE);
     if (targetType is bir:BTypeInt) {
-        mv.visitMethodInsn(INVOKESTATIC, LONG_VALUE, "parseLong", io:sprintf("(L%s;)J", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "parseLong", io:sprintf("(L%s;)J", BSTRING_VALUE), false);
     } else if (targetType is bir:BTypeByte) {
-        mv.visitMethodInsn(INVOKESTATIC, INT_VALUE, "parseInt", io:sprintf("(L%s;)I", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "parseInt", io:sprintf("(L%s;)I", BSTRING_VALUE), false);
     } else if (targetType is bir:BTypeFloat) {
-        mv.visitMethodInsn(INVOKESTATIC, DOUBLE_VALUE, "parseDouble", io:sprintf("(L%s;)D", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "parseDouble", io:sprintf("(L%s;)D", BSTRING_VALUE), false);
     } else if (targetType is bir:BTypeBoolean) {
-        mv.visitMethodInsn(INVOKESTATIC, BOOLEAN_VALUE, "parseBoolean", io:sprintf("(L%s;)Z", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "parseBoolean", io:sprintf("(L%s;)Z", BSTRING_VALUE), false);
     } else if (targetType is bir:BTypeDecimal) {
-        mv.visitMethodInsn(INVOKESPECIAL, DECIMAL_VALUE, "<init>", io:sprintf("(L%s;)V", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESPECIAL, DECIMAL_VALUE, "<init>", io:sprintf("(L%s;)V", BSTRING_VALUE), false);
     } else if (targetType is bir:BArrayType) {
         mv.visitTypeInsn(CHECKCAST, ARRAY_VALUE);
     } else if (targetType is bir:BMapType) {
@@ -2049,7 +2049,7 @@ function generateField(jvm:ClassWriter cw, bir:BType bType, string fieldName, bo
     } else if (bType is bir:BTypeFloat) {
         typeSig = "D";
     } else if (bType is bir:BTypeString) {
-        typeSig = io:sprintf("L%s;", STRING_VALUE);
+        typeSig = io:sprintf("L%s;", BSTRING_VALUE);
     } else if (bType is bir:BTypeDecimal) {
         typeSig = io:sprintf("L%s;", DECIMAL_VALUE);
     } else if (bType is bir:BTypeBoolean) {

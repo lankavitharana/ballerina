@@ -16,6 +16,7 @@
  */
 package org.ballerinalang.jvm;
 
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.XMLQName;
 
 /**
@@ -280,9 +281,10 @@ public class XMLValidator {
      * 
      * @param name Name to check the validity
      */
-    public static void validateXMLName(String name) {
+    public static void validateXMLName(StringValue name) {
         if (name != null && !isValid(name)) {
-            throw BallerinaErrors.createError("invalid xml qualified name: unsupported characters in '" + name + "'");
+            throw BallerinaErrors.createError(new StringValue("invalid xml qualified name: " +
+                    "unsupported characters in '" + name + "'"));
         }
     }
 
@@ -299,7 +301,7 @@ public class XMLValidator {
      * @param name Name to check the validity as an XML name
      * @return Flag indicating whether the name is a valid XML name
      */
-    public static boolean isValid(String name) {
+    public static boolean isValid(StringValue name) {
         boolean bValid = true;
         for (int i = 0; i < name.length(); i++) {
             if (i == 0) {

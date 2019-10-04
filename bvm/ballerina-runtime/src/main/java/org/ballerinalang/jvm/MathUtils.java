@@ -18,6 +18,7 @@
 package org.ballerinalang.jvm;
 
 import org.ballerinalang.jvm.util.exceptions.BallerinaErrorReasons;
+import org.ballerinalang.jvm.values.StringValue;
 
 /**
  * Common utility methods used for arithmatic operations.
@@ -31,9 +32,11 @@ public class MathUtils {
             return numerator / denominator;
         } catch (ArithmeticException e) {
             if (denominator == 0) {
-                throw BallerinaErrors.createError(BallerinaErrorReasons.DIVISION_BY_ZERO_ERROR, " / by zero");
+                throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.DIVISION_BY_ZERO_ERROR),
+                        " / by zero");
             } else {
-                throw BallerinaErrors.createError(BallerinaErrorReasons.ARITHMETIC_OPERATION_ERROR, e.getMessage());
+                throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.ARITHMETIC_OPERATION_ERROR),
+                        e.getMessage());
             }
         }
     }
@@ -43,9 +46,11 @@ public class MathUtils {
             return numerator % denominator;
         } catch (ArithmeticException e) {
             if (denominator == 0) {
-                throw BallerinaErrors.createError(BallerinaErrorReasons.DIVISION_BY_ZERO_ERROR, " / by zero");
+                throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.DIVISION_BY_ZERO_ERROR),
+                        " / by zero");
             } else {
-                throw BallerinaErrors.createError(BallerinaErrorReasons.ARITHMETIC_OPERATION_ERROR, e.getMessage());
+                throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.ARITHMETIC_OPERATION_ERROR),
+                        e.getMessage());
             }
         }
     }

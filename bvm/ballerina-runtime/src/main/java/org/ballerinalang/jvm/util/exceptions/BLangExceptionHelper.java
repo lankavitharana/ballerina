@@ -20,6 +20,7 @@ package org.ballerinalang.jvm.util.exceptions;
 
 import org.ballerinalang.jvm.BallerinaErrors;
 import org.ballerinalang.jvm.values.ErrorValue;
+import org.ballerinalang.jvm.values.StringValue;
 
 import java.text.MessageFormat;
 import java.util.Locale;
@@ -33,12 +34,12 @@ public class BLangExceptionHelper {
 
     public static ErrorValue getRuntimeException(RuntimeErrors runtimeErrors, Object... params) {
         String errorMsg = MessageFormat.format(messageBundle.getString(runtimeErrors.getErrorMsgKey()), params);
-        return BallerinaErrors.createError(errorMsg);
+        return BallerinaErrors.createError(new StringValue(errorMsg));
     }
 
     public static ErrorValue getRuntimeException(String reason, RuntimeErrors runtimeErrors, Object... params) {
         String errorDetail = MessageFormat.format(messageBundle.getString(runtimeErrors.getErrorMsgKey()), params);
-        return BallerinaErrors.createError(reason, errorDetail);
+        return BallerinaErrors.createError(new StringValue(reason), errorDetail);
     }
 
     public static String getErrorMessage(RuntimeErrors runtimeErrors, Object... params) {
@@ -57,15 +58,17 @@ public class BLangExceptionHelper {
         // here local message of the cause is logged whenever possible, to avoid java class being logged
         // along with the error message.
         if (e instanceof BallerinaException && ((BallerinaException) e).getDetail() != null) {
-            return BallerinaErrors.createError(reason,
+            return BallerinaErrors.createError(new StringValue(reason),
                     "Failed to " + operation + ": " + ((BallerinaException) e).getDetail());
         } else if (e instanceof BLangFreezeException) {
-            return BallerinaErrors.createError(reason,
+            return BallerinaErrors.createError(new StringValue(reason),
                     "Failed to " + operation + ": " + ((BLangFreezeException) e).getDetail());
         } else if (e.getCause() != null) {
-            return BallerinaErrors.createError(reason, "Failed to " + operation + ": " + e.getCause().getMessage());
+            return BallerinaErrors.createError(new StringValue(reason), "Failed to " +
+                    operation + ": " + e.getCause().getMessage());
         } else {
-            return BallerinaErrors.createError(reason, "Failed to " + operation + ": " + e.getMessage());
+            return BallerinaErrors.createError(new StringValue(reason), "Failed to " +
+                    operation + ": " + e.getMessage());
         }
     }
 
@@ -80,7 +83,8 @@ public class BLangExceptionHelper {
      * @param e Exception to handle
      */
     public static void handleInvalidXPath(String operation, Exception e) {
-        throw  BallerinaErrors.createError("Failed to " + operation + ". Invalid xpath: " + e.getMessage());
+        throw  BallerinaErrors.createError(new StringValue("Failed to " + operation +
+                ". Invalid xpath: " + e.getMessage()));
     }
 
     /**

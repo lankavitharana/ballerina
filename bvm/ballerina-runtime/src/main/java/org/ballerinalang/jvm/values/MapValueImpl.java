@@ -122,35 +122,35 @@ public class MapValueImpl<K, V> extends LinkedHashMap<K, V> implements RefValue,
         }
     }
 
-    public Long getIntValue(String key) {
+    public Long getIntValue(K key) {
         return (Long) get(key);
     }
 
-    public Double getFloatValue(String key) {
+    public Double getFloatValue(K key) {
         return (Double) get(key);
     }
 
-    public String getStringValue(String key) {
+    public String getStringValue(K key) {
         return (String) get(key);
     }
 
-    public Boolean getBooleanValue(String key) {
+    public Boolean getBooleanValue(K key) {
         return (Boolean) get(key);
     }
 
-    public MapValueImpl<?, ?> getMapValue(String key) {
+    public MapValueImpl<?, ?> getMapValue(K key) {
         return (MapValueImpl<?, ?>) get(key);
     }
 
-    public ObjectValue getObjectValue(String key) {
+    public ObjectValue getObjectValue(K key) {
         return (ObjectValue) get(key);
     }
 
-    public ArrayValue getArrayValue(String key) {
+    public ArrayValue getArrayValue(K key) {
         return (ArrayValue) get(key);
     }
 
-    public long getDefaultableIntValue(String key) {
+    public long getDefaultableIntValue(K key) {
         if (get(key) != null) {
             return getIntValue(key);
         }
@@ -164,7 +164,7 @@ public class MapValueImpl<K, V> extends LinkedHashMap<K, V> implements RefValue,
      * @param key key used to get the value
      * @return value associated with the key
      */
-    public V getOrThrow(Object key) {
+    public V getOrThrow(K key) {
         readLock.lock();
         try {
             if (!containsKey(key)) {
@@ -184,7 +184,7 @@ public class MapValueImpl<K, V> extends LinkedHashMap<K, V> implements RefValue,
      * @param key key used to get the value
      * @return value associated with the key
      */
-    public V fillAndGet(Object key) {
+    public V fillAndGet(K key) {
         writeLock.lock();
         try {
             if (containsKey(key)) {
@@ -291,7 +291,7 @@ public class MapValueImpl<K, V> extends LinkedHashMap<K, V> implements RefValue,
                         errMessage = "Invalid map insertion: ";
                         break;
                 }
-                throw BallerinaErrors.createError(e.getMessage(), errMessage + e.getDetail());
+                throw BallerinaErrors.createError(new StringValue(e.getMessage()), errMessage + e.getDetail());
             }
         } finally {
             writeLock.unlock();
@@ -613,14 +613,6 @@ public class MapValueImpl<K, V> extends LinkedHashMap<K, V> implements RefValue,
     }
 
     // Private methods
-
-    private String getStringValue(Object value) {
-        if (value == null) {
-            return null;
-        } else {
-            return value.toString();
-        }
-    }
 
     public String getJSONString() {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();

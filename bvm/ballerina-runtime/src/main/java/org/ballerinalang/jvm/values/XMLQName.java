@@ -35,9 +35,9 @@ import java.util.Map;
  */
 public final class XMLQName implements RefValue {
 
-    private String localName;
-    private String uri;
-    private String prefix;
+    private StringValue localName;
+    private StringValue uri;
+    private StringValue prefix;
 
     /**
      * Create attribute map with an XML.
@@ -46,17 +46,17 @@ public final class XMLQName implements RefValue {
      * @param uri Namespace URI
      * @param prefix Namespace prefix
      */
-    public XMLQName(String localName, String uri, String prefix) {
+    public XMLQName(StringValue localName, StringValue uri, StringValue prefix) {
         this.localName = localName;
         this.uri = uri;
         this.prefix = prefix;
     }
 
-    public XMLQName(String qNameStr) {
-        int parenEndIndex = qNameStr.indexOf('}');
-        if (qNameStr.startsWith("{") && parenEndIndex > 0) {
-            localName = qNameStr.substring(parenEndIndex + 1, qNameStr.length());
-            uri = qNameStr.substring(1, parenEndIndex);
+    public XMLQName(StringValue qNameStr) {
+        int parenEndIndex = qNameStr.value.indexOf('}');
+        if (qNameStr.value.startsWith("{") && parenEndIndex > 0) {
+            localName = new StringValue(qNameStr.value.substring(parenEndIndex + 1, qNameStr.value.length()));
+            uri = new StringValue(qNameStr.value.substring(1, parenEndIndex));
         } else {
             localName = qNameStr;
             uri = null;
@@ -65,12 +65,12 @@ public final class XMLQName implements RefValue {
 
     @Override
     public String toString() {
-        return (uri == null || uri.isEmpty()) ? localName : '{' + uri + '}' + localName;
+        return (uri == null || uri.value.isEmpty()) ? localName.value : '{' + uri.value + '}' + localName.value;
     }
 
     @Override
     public String stringValue(Strand strand) {
-        return (uri == null || uri.isEmpty()) ? localName : '{' + uri + '}' + localName;
+        return (uri == null || uri.value.isEmpty()) ? localName.value : '{' + uri.value + '}' + localName.value;
     }
 
     @Override
@@ -108,27 +108,27 @@ public final class XMLQName implements RefValue {
         return copy;
     }
 
-    public String getLocalName() {
+    public StringValue getLocalName() {
         return localName;
     }
 
-    public void setLocalName(String localName) {
+    public void setLocalName(StringValue localName) {
         this.localName = localName;
     }
 
-    public String getUri() {
+    public StringValue getUri() {
         return uri;
     }
 
-    public void setUri(String uri) {
+    public void setUri(StringValue uri) {
         this.uri = uri;
     }
 
-    public String getPrefix() {
+    public StringValue getPrefix() {
         return prefix;
     }
 
-    public void setPrefix(String prefix) {
+    public void setPrefix(StringValue prefix) {
         this.prefix = prefix;
     }
 }

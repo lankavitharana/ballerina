@@ -22,6 +22,7 @@ import org.ballerinalang.jvm.BallerinaErrors;
 import org.ballerinalang.jvm.JSONParser;
 import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.util.exceptions.BallerinaException;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
@@ -53,7 +54,7 @@ public class FromJsonString {
         try {
             return JSONParser.parse(reader);
         } catch (BallerinaException e) {
-            return BallerinaErrors.createError("{ballerina}FromJsonStringError", e.getMessage());
+            return BallerinaErrors.createError(new StringValue("{ballerina}FromJsonStringError"), e.getMessage());
         }
     }
 }

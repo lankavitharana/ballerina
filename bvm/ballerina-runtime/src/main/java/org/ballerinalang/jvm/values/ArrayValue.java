@@ -93,7 +93,7 @@ public class ArrayValue implements RefValue, CollectionValue {
     private boolean[] booleanValues;
     private byte[] byteValues;
     private double[] floatValues;
-    private String[] stringValues;
+    private StringValue[] stringValues;
 
     public BType elementType;
     private BType tupleRestType;
@@ -133,7 +133,7 @@ public class ArrayValue implements RefValue, CollectionValue {
         setArrayElementType(BTypes.typeFloat);
     }
 
-    public ArrayValue(String[] values) {
+    public ArrayValue(StringValue[] values) {
         this.stringValues = values;
         this.size = values.length;
         setArrayElementType(BTypes.typeString);
@@ -153,7 +153,7 @@ public class ArrayValue implements RefValue, CollectionValue {
             floatValues = (double[]) newArrayInstance(Double.TYPE);
             setArrayElementType(type);
         } else if (type.getTag() == TypeTags.STRING_TAG) {
-            stringValues = (String[]) newArrayInstance(String.class);
+            stringValues = (StringValue[]) newArrayInstance(StringValue.class);
             setArrayElementType(type);
         } else {
             this.arrayType = type;
@@ -192,7 +192,7 @@ public class ArrayValue implements RefValue, CollectionValue {
                 floatValues = (double[]) newArrayInstance(Double.TYPE);
                 break;
             case TypeTags.STRING_TAG:
-                stringValues = (String[]) newArrayInstance(String.class);
+                stringValues = (StringValue[]) newArrayInstance(StringValue.class);
                 break;
             case TypeTags.BOOLEAN_TAG:
                 booleanValues = (boolean[]) newArrayInstance(Boolean.TYPE);
@@ -300,12 +300,12 @@ public class ArrayValue implements RefValue, CollectionValue {
         }
     }
 
-    public String getString(long index) {
+    public StringValue getString(long index) {
         rangeCheckForGet(index, size);
         if (elementType.getTag() == TypeTags.STRING_TAG) {
             return stringValues[(int) index];
         } else {
-            return (String) refValues[(int) index];
+            return (StringValue) refValues[(int) index];
         }
     }
 
@@ -364,7 +364,7 @@ public class ArrayValue implements RefValue, CollectionValue {
         floatValues[(int) index] = value;
     }
 
-    public void add(long index, String value) {
+    public void add(long index, StringValue value) {
         handleFrozenArrayValue();
         prepareForAdd(index, stringValues.length);
         stringValues[(int) index] = value;
@@ -540,7 +540,7 @@ public class ArrayValue implements RefValue, CollectionValue {
                 return sj.toString();
             } else if (elementType.getTag() == TypeTags.STRING_TAG) {
                 for (int i = 0; i < size; i++) {
-                    sj.add(stringValues[i]);
+                    sj.add(stringValues[i].value);
                 }
                 return sj.toString();
             }
@@ -740,7 +740,7 @@ public class ArrayValue implements RefValue, CollectionValue {
         return bytes;
     }
 
-    public String[] getStringArray() {
+    public StringValue[] getStringArray() {
         return Arrays.copyOf(stringValues, size);
     }
 
@@ -917,7 +917,7 @@ public class ArrayValue implements RefValue, CollectionValue {
                     FreezeUtils.handleInvalidUpdate(freezeStatus.getState(), ARRAY_LANG_LIB);
                 }
             } catch (BLangFreezeException e) {
-                throw BallerinaErrors.createError(e.getMessage(), e.getDetail());
+                throw BallerinaErrors.createError(new StringValue(e.getMessage()), e.getDetail());
             }
         }
     }
@@ -1086,9 +1086,9 @@ public class ArrayValue implements RefValue, CollectionValue {
         }
 
         if (arrayElementType.getTag() == TypeTags.STRING_TAG) {
-            stringValues = (String[]) newArrayInstance(String.class);
+            stringValues = (StringValue[]) newArrayInstance(StringValue.class);
             for (int i = 0; i < this.size(); i++) {
-                stringValues[i] = (String) arrayValues[i];
+                stringValues[i] = (StringValue) arrayValues[i];
             }
         }
 

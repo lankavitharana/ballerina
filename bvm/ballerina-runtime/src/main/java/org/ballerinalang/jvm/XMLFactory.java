@@ -45,6 +45,7 @@ import org.ballerinalang.jvm.types.TypeConstants;
 import org.ballerinalang.jvm.values.ArrayValue;
 import org.ballerinalang.jvm.values.ErrorValue;
 import org.ballerinalang.jvm.values.MapValueImpl;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.TableValue;
 import org.ballerinalang.jvm.values.XMLItem;
 import org.ballerinalang.jvm.values.XMLQName;
@@ -100,7 +101,7 @@ public class XMLFactory {
                     "org.apache.axiom.c14n.impl.Canonicalizer20010315ExclWithComments");
             canonicalizer = Canonicalizer.getInstance(CANONICALIZER_WITH_COMMENTS);
         } catch (InvalidCanonicalizerException e) {
-            throw BallerinaErrors.createError("Error initializing canonicalizer: " + e.getMessage());
+            throw BallerinaErrors.createError(new StringValue("Error initializing canonicalizer: " + e.getMessage()));
         } catch (Exception ignore) {
             // Ignore
         }
@@ -137,7 +138,8 @@ public class XMLFactory {
 
             if (children.hasNext()) {
                 throw BallerinaErrors
-                        .createError("xml item must be one of the types: 'element', 'comment', 'text', 'pi'");
+                        .createError(new StringValue("xml item must be one of the types: 'element', " +
+                                "'comment', 'text', 'pi'"));
             }
 
             // Here the node is detached from the dummy root, and added to a
@@ -150,9 +152,9 @@ public class XMLFactory {
             throw e;
         } catch (OMException | XMLStreamException e) {
             Throwable cause = e.getCause() == null ? e : e.getCause();
-            throw BallerinaErrors.createError(cause.getMessage());
+            throw BallerinaErrors.createError(new StringValue(cause.getMessage()));
         } catch (Throwable e) {
-            throw BallerinaErrors.createError("failed to parse xml: " + e.getMessage());
+            throw BallerinaErrors.createError(new StringValue("failed to parse xml: " + e.getMessage()));
         }
     }
 
@@ -174,9 +176,9 @@ public class XMLFactory {
                 elementsSeq.add(i++, new XMLItem(docChildItr.next()));
             }
         } catch (DeferredParsingException e) {
-            throw BallerinaErrors.createError(e.getCause().getMessage());
+            throw BallerinaErrors.createError(new StringValue(e.getCause().getMessage()));
         } catch (Throwable e) {
-            throw BallerinaErrors.createError("failed to create xml: " + e.getMessage());
+            throw BallerinaErrors.createError(new StringValue("failed to create xml: " + e.getMessage()));
         }
         return new XMLSequence(elementsSeq);
     }
@@ -200,9 +202,9 @@ public class XMLFactory {
                 elementsSeq.add(index++, new XMLItem(docChildItr.next()));
             }
         } catch (DeferredParsingException e) {
-            throw BallerinaErrors.createError(e.getCause().getMessage());
+            throw BallerinaErrors.createError(new StringValue(e.getCause().getMessage()));
         } catch (Throwable e) {
-            throw BallerinaErrors.createError("failed to create xml: " + e.getMessage());
+            throw BallerinaErrors.createError(new StringValue("failed to create xml: " + e.getMessage()));
         }
         return new XMLSequence(elementsSeq);
     }
@@ -225,9 +227,9 @@ public class XMLFactory {
                 elementsSeq.add(i++, new XMLItem(docChildItr.next()));
             }
         } catch (DeferredParsingException e) {
-            throw BallerinaErrors.createError(e.getCause().getMessage());
+            throw BallerinaErrors.createError(new StringValue(e.getCause().getMessage()));
         } catch (Throwable e) {
-            throw BallerinaErrors.createError("failed to create xml: " + e.getMessage());
+            throw BallerinaErrors.createError(new StringValue("failed to create xml: " + e.getMessage()));
         }
         return new XMLSequence(elementsSeq);
     }
@@ -291,36 +293,37 @@ public class XMLFactory {
      * @param defaultNsUri Default namespace URI
      * @return XMLValue Element type XMLValue
      */
-    public static XMLValue<?> createXMLElement(XMLQName startTagName, XMLQName endTagName, String defaultNsUri) {
+    public static XMLValue<?> createXMLElement(XMLQName startTagName, XMLQName endTagName, StringValue defaultNsUri) {
         if (!StringUtils.isEqual(startTagName.getLocalName(), endTagName.getLocalName()) ||
                 !StringUtils.isEqual(startTagName.getUri(), endTagName.getUri()) ||
                 !StringUtils.isEqual(startTagName.getPrefix(), endTagName.getPrefix())) {
             throw BallerinaErrors
-                    .createError("start and end tag names mismatch: '" + startTagName + "' and '" + endTagName + "'");
+                    .createError(new StringValue("start and end tag names mismatch: '" + startTagName + "' and '" + endTagName + "'"));
         }
 
         // Validate whether the tag names are XML supported qualified names, according to the XML recommendation.
         XMLValidator.validateXMLQName(startTagName);
 
-        String nsUri = startTagName.getUri();
+        StringValue nsUri = startTagName.getUri();
         OMElement omElement;
         if (defaultNsUri == null) {
-            defaultNsUri = XMLConstants.NULL_NS_URI;
+            defaultNsUri = new StringValue(XMLConstants.NULL_NS_URI);
         }
 
-        String prefix = startTagName.getPrefix() == null ? XMLConstants.DEFAULT_NS_PREFIX : startTagName.getPrefix();
+        StringValue prefix = startTagName.getPrefix() == null ? new StringValue(XMLConstants.DEFAULT_NS_PREFIX)
+                : new StringValue(startTagName.getPrefix());
 
         if (nsUri == null) {
-            omElement = OM_FACTORY.createOMElement(startTagName.getLocalName(), defaultNsUri, prefix);
+            omElement = OM_FACTORY.createOMElement(startTagName.getLocalName().value, defaultNsUri.value, prefix.value);
         } else if (nsUri.isEmpty()) {
-            omElement = OM_FACTORY.createOMElement(startTagName.getLocalName(), nsUri, prefix);
+            omElement = OM_FACTORY.createOMElement(startTagName.getLocalName().value, nsUri.value, prefix.value);
         } else if (nsUri.equals(defaultNsUri)) {
-            omElement = OM_FACTORY.createOMElement(startTagName.getLocalName(), defaultNsUri, prefix);
+            omElement = OM_FACTORY.createOMElement(startTagName.getLocalName().value, defaultNsUri.value, prefix.value);
         } else {
-            QName qname = getQName(startTagName.getLocalName(), nsUri, prefix);
+            QName qname = getQName(startTagName.getLocalName().value, nsUri.value, prefix.value);
             omElement = OM_FACTORY.createOMElement(qname);
             if (!defaultNsUri.isEmpty()) {
-                omElement.declareDefaultNamespace(defaultNsUri);
+                omElement.declareDefaultNamespace(defaultNsUri.value);
             }
         }
 
@@ -333,8 +336,8 @@ public class XMLFactory {
      * @param content Comment content
      * @return XMLValue Comment type XMLValue
      */
-    public static XMLValue<?> createXMLComment(String content) {
-        OMComment omComment = OM_FACTORY.createOMComment(OM_FACTORY.createOMDocument(), content);
+    public static XMLValue<?> createXMLComment(StringValue content) {
+        OMComment omComment = OM_FACTORY.createOMComment(OM_FACTORY.createOMDocument(), content.value);
         return new XMLItem(omComment);
     }
 
@@ -365,9 +368,9 @@ public class XMLFactory {
      * @param data PI data
      * @return XMLValue Processing instruction type XMLValue
      */
-    public static XMLValue<?> createXMLProcessingInstruction(String tartget, String data) {
+    public static XMLValue<?> createXMLProcessingInstruction(StringValue tartget, StringValue data) {
         OMProcessingInstruction omText =
-                OM_FACTORY.createOMProcessingInstruction(OM_FACTORY.createOMDocument(), tartget, data);
+                OM_FACTORY.createOMProcessingInstruction(OM_FACTORY.createOMDocument(), tartget.value, data.value);
         return new XMLItem(omText);
     }
 

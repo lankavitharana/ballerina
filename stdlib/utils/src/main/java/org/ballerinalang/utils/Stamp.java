@@ -24,6 +24,7 @@ import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.types.TypeTags;
 import org.ballerinalang.jvm.util.exceptions.BLangExceptionHelper;
 import org.ballerinalang.jvm.values.RefValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.TypedescValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
@@ -77,12 +78,12 @@ public class Stamp {
                 return null;
             }
             return BallerinaErrors
-                    .createError(BALLERINA_PREFIXED_STAMP_ERROR,
+                    .createError(new StringValue(BALLERINA_PREFIXED_STAMP_ERROR),
                                  BLangExceptionHelper.getErrorMessage(CANNOT_STAMP_NULL, stampType));
         }
         if (!TypeChecker.checkIsLikeType(valueToBeStamped, targetType)) {
             return BallerinaErrors
-                    .createError(BALLERINA_PREFIXED_STAMP_ERROR,
+                    .createError(new StringValue(BALLERINA_PREFIXED_STAMP_ERROR),
                                  BLangExceptionHelper.getErrorMessage(INCOMPATIBLE_STAMP_OPERATION,
                                                                       TypeChecker.getType(valueToBeStamped),
                                                                       targetType));
@@ -92,7 +93,7 @@ public class Stamp {
                 ((RefValue) valueToBeStamped).stamp(targetType, new ArrayList<>());
             }
         } catch (org.ballerinalang.jvm.util.exceptions.BallerinaException e) {
-            throw BallerinaErrors.createError(BALLERINA_PREFIXED_STAMP_ERROR, e.getDetail());
+            throw BallerinaErrors.createError(new StringValue(BALLERINA_PREFIXED_STAMP_ERROR), e.getDetail());
         }
         return valueToBeStamped;
     }

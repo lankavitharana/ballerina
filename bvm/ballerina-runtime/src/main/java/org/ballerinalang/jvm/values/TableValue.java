@@ -87,12 +87,12 @@ public class TableValue implements RefValue, CollectionValue {
                       BStructureType constraintType, ArrayValue params) {
         this.tableProvider = TableProvider.getInstance();
         if (!fromTable.isInMemoryTable()) {
-            throw BallerinaErrors.createError(BallerinaErrorReasons.TABLE_OPERATION_ERROR,
+            throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.TABLE_OPERATION_ERROR),
                     "Table query over a cursor table not supported");
         }
         if (joinTable != null) {
             if (!joinTable.isInMemoryTable()) {
-                throw BallerinaErrors.createError(BallerinaErrorReasons.TABLE_OPERATION_ERROR,
+                throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.TABLE_OPERATION_ERROR),
                         "Table query over a cursor table not supported");
             }
             this.tableName = tableProvider.createTable(fromTable.tableName, joinTable.tableName, query,
@@ -143,7 +143,7 @@ public class TableValue implements RefValue, CollectionValue {
 
     public boolean hasNext() {
         if (tableClosed) {
-            throw BallerinaErrors.createError(BallerinaErrorReasons.TABLE_OPERATION_ERROR,
+            throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.TABLE_OPERATION_ERROR),
                     "Trying to perform hasNext operation over a closed table");
         }
         if (isIteratorGenerationConditionMet()) {
@@ -161,7 +161,7 @@ public class TableValue implements RefValue, CollectionValue {
 
     public void moveToNext() {
         if (tableClosed) {
-            throw BallerinaErrors.createError(BallerinaErrorReasons.TABLE_CLOSED_ERROR,
+            throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.TABLE_CLOSED_ERROR),
                     "Trying to perform an operation over a closed table");
         }
         if (isIteratorGenerationConditionMet()) {
@@ -189,11 +189,11 @@ public class TableValue implements RefValue, CollectionValue {
         resetIterationHelperAttributes();
     }
 
-    public MapValueImpl<String, Object> getNext() {
+    public MapValueImpl<StringValue, Object> getNext() {
         // Make next row the current row
         moveToNext();
         // Create BStruct from current row
-        return (MapValueImpl<String, Object>) iterator.generateNext();
+        return (MapValueImpl<StringValue, Object>) iterator.generateNext();
     }
 
     /**
@@ -202,7 +202,7 @@ public class TableValue implements RefValue, CollectionValue {
      * @param data    The record to be inserted
      * @return error if something goes wrong
      */
-    public Object performAddOperation(MapValueImpl<String, Object> data) {
+    public Object performAddOperation(MapValueImpl<StringValue, Object> data) {
         synchronized (this) {
             if (freezeStatus.getState() != State.UNFROZEN) {
                 FreezeUtils.handleInvalidUpdate(freezeStatus.getState(), TABLE_LANG_LIB);
@@ -219,9 +219,9 @@ public class TableValue implements RefValue, CollectionValue {
         }
     }
 
-    public void addData(MapValueImpl<String, Object> data) {
+    public void addData(MapValueImpl<StringValue, Object> data) {
         if (data.getType() != this.constraintType) {
-            throw BallerinaErrors.createError(BallerinaErrorReasons.TABLE_OPERATION_ERROR,
+            throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.TABLE_OPERATION_ERROR),
                     "incompatible types: record of type:" + data.getType().getName()
                             + " cannot be added to a table with type:" + this.constraintType.getName());
         }
@@ -244,7 +244,7 @@ public class TableValue implements RefValue, CollectionValue {
         }
         int deletedCount = 0;
         while (this.hasNext()) {
-            MapValueImpl<String, Object> row = this.getNext();
+            MapValueImpl<StringValue, Object> row = this.getNext();
             if (func.apply(new Object[] { strand, row, true })) {
                 tableProvider.deleteData(this.tableName, row);
                 ++deletedCount;
@@ -296,7 +296,7 @@ public class TableValue implements RefValue, CollectionValue {
     @Override
     public Object copy(Map<Object, Object> refs) {
         if (tableClosed) {
-            throw BallerinaErrors.createError(BallerinaErrorReasons.TABLE_OPERATION_ERROR,
+            throw BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.TABLE_OPERATION_ERROR),
                     "Trying to invoke clone built-in method over a closed table");
         }
 
@@ -365,7 +365,7 @@ public class TableValue implements RefValue, CollectionValue {
     private void insertInitialData(ArrayValue data) {
         int count = data.size();
         for (int i = 0; i < count; i++) {
-            addData((MapValueImpl<String, Object>) data.getRefValue(i));
+            addData((MapValueImpl<StringValue, Object>) data.getRefValue(i));
         }
     }
 

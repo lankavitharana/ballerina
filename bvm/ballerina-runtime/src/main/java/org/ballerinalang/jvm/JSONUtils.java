@@ -39,6 +39,7 @@ import org.ballerinalang.jvm.values.MapValue;
 import org.ballerinalang.jvm.values.MapValueImpl;
 import org.ballerinalang.jvm.values.RefValue;
 import org.ballerinalang.jvm.values.StreamingJsonValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.TableValue;
 
 import java.math.BigDecimal;
@@ -131,7 +132,7 @@ public class JSONUtils {
      * @return Element of the JSON for the provided key, if the JSON is object type. Error if not an object or nil
      * if the object does not have the key.
      */
-    public static Object getElementOrNil(Object json, String elementName) {
+    public static Object getElementOrNil(Object json, StringValue elementName) {
         return getMappingElement(json, elementName, true);
     }
 
@@ -143,7 +144,7 @@ public class JSONUtils {
      * @return Element of the JSON for the provided key, if the JSON is object type. Error if not an object or does
      * not have the key.
      */
-    public static Object getElement(Object json, String elementName) {
+    public static Object getElement(Object json, StringValue elementName) {
         return getMappingElement(json, elementName, false);
     }
 
@@ -155,12 +156,12 @@ public class JSONUtils {
      * @param returnNilOnMissingKey Whether to return nil on missing key instead of error
      * @return Element of JSON having the provided name, if the JSON is object type. Null otherwise.
      */
-    private static Object getMappingElement(Object json, String elementName, boolean returnNilOnMissingKey) {
+    private static Object getMappingElement(Object json, StringValue elementName, boolean returnNilOnMissingKey) {
         if (!isJSONObject(json)) {
             return BallerinaErrors.createError(JSON_OPERATION_ERROR, "JSON value is not a mapping");
         }
 
-        MapValueImpl<String, Object> jsonObject = (MapValueImpl<String, Object>) json;
+        MapValueImpl<StringValue, Object> jsonObject = (MapValueImpl<StringValue, Object>) json;
 
         if (!jsonObject.containsKey(elementName)) {
             if (returnNilOnMissingKey) {
@@ -193,13 +194,13 @@ public class JSONUtils {
      * @param elementName Name of the element to be set
      * @param element JSON element
      */
-    public static void setElement(Object json, String elementName, Object element) {
+    public static void setElement(Object json, StringValue elementName, Object element) {
         if (!isJSONObject(json)) {
             return;
         }
 
         try {
-            ((MapValueImpl<String, Object>) json).put(elementName, element);
+            ((MapValueImpl<StringValue, Object>) json).put(elementName, element);
         } catch (ErrorValue e) {
             throw e;
         } catch (Throwable t) {
@@ -410,7 +411,7 @@ public class JSONUtils {
             return new ArrayValue(BTypes.typeString);
         }
 
-        String[] keys = ((MapValueImpl<String, ?>) json).getKeys();
+        StringValue[] keys = ((MapValueImpl<StringValue, ?>) json).getKeys();
         return new ArrayValue(keys);
     }
 

@@ -163,8 +163,8 @@ public abstract class AbstractObjectValue implements ObjectValue {
             return;
         }
 
-        throw BallerinaErrors.createError(getModulePrefixedReason(OBJECT_LANG_LIB,
-                                                                  INHERENT_TYPE_VIOLATION_ERROR_IDENTIFIER),
+        throw BallerinaErrors.createError(new StringValue(getModulePrefixedReason(OBJECT_LANG_LIB,
+                                                                  INHERENT_TYPE_VIOLATION_ERROR_IDENTIFIER)),
                 "invalid value for object field '" + fieldName + "': expected value of type '" + fieldType +
                         "', found '" + TypeChecker.getType(value) + "'");
     }

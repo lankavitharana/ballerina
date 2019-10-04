@@ -18,6 +18,7 @@
 package org.ballerinalang.stdlib.io.channels.base;
 
 import org.ballerinalang.jvm.values.ArrayValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.stdlib.io.csv.Format;
 import org.ballerinalang.stdlib.io.utils.BallerinaIOException;
 import org.slf4j.Logger;
@@ -317,7 +318,7 @@ public class DelimitedRecordChannel implements IOChannel {
      * @param record the record which contains all the fields.
      * @return fields which are separated as records.
      */
-    private String[] getFields(String record) {
+    private StringValue[] getFields(String record) {
         String fieldSeparatorForReading = getFieldSeparatorForReading();
         if (null != format && format.shouldIgnoreBlanks()) {
             return splitIgnoreBlanks(record, fieldSeparatorForReading);
@@ -338,9 +339,9 @@ public class DelimitedRecordChannel implements IOChannel {
      * @return the list of fields.
      * @throws BallerinaIOException during I/O errors
      */
-    public String[] read() throws BallerinaIOException {
+    public StringValue[] read() throws BallerinaIOException {
         final int emptyArrayIndex = 0;
-        String[] fields = new String[emptyArrayIndex];
+        StringValue[] fields = new StringValue[emptyArrayIndex];
         if (remaining) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Reading record %d from %d", numberOfRecordsReadThroughChannel,

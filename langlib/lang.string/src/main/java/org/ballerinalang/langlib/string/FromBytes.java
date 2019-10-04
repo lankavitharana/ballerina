@@ -21,6 +21,7 @@ package org.ballerinalang.langlib.string;
 import org.ballerinalang.jvm.BallerinaErrors;
 import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.values.ArrayValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
@@ -45,7 +46,7 @@ public class FromBytes {
         try {
             return new String(bytes.getBytes(), Charset.forName("UTF-8"));
         } catch (Exception e) {
-            return BallerinaErrors.createError("FailedToDecodeBytes", e.getMessage());
+            return BallerinaErrors.createError(new StringValue("FailedToDecodeBytes"), e.getMessage());
         }
     }
 }

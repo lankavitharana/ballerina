@@ -57,6 +57,7 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
 
+import static org.ballerinalang.jvm.util.BLangConstants.BSTRING_NULL_VALUE;
 import static org.ballerinalang.jvm.util.BLangConstants.STRING_NULL_VALUE;
 import static org.ballerinalang.jvm.util.BLangConstants.XML_LANG_LIB;
 import static org.ballerinalang.jvm.util.exceptions.BallerinaErrorReasons.KEY_NOT_FOUND_ERROR_IDENTIFIER;
@@ -210,40 +211,40 @@ public final class XMLItem extends XMLValue<OMNode> {
      * {@inheritDoc}
      */
     @Override
-    public String getAttribute(String localName, String namespace) {
-        return getAttribute(localName, namespace, XMLConstants.DEFAULT_NS_PREFIX);
+    public StringValue getAttribute(StringValue localName, StringValue namespace) {
+        return getAttribute(localName, namespace, new StringValue(XMLConstants.DEFAULT_NS_PREFIX));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getAttribute(String localName, String namespace, String prefix) {
+    public StringValue getAttribute(StringValue localName, StringValue namespace, StringValue prefix) {
         if (nodeType != XMLNodeType.ELEMENT || localName == null || localName.isEmpty()) {
-            return STRING_NULL_VALUE;
+            return BSTRING_NULL_VALUE;
         }
         QName attributeName = getQName(localName, namespace, prefix);
         OMAttribute attribute = ((OMElement) omNode).getAttribute(attributeName);
 
         if (attribute != null) {
-            return attribute.getAttributeValue();
+            return new StringValue(attribute.getAttributeValue());
         }
 
-        OMNamespace ns = ((OMElement) omNode).findNamespaceURI(localName);
-        return ns == null ? STRING_NULL_VALUE : ns.getNamespaceURI();
+        OMNamespace ns = ((OMElement) omNode).findNamespaceURI(localName.value);
+        return ns == null ? BSTRING_NULL_VALUE : new StringValue(ns.getNamespaceURI());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setAttribute(String localName, String namespaceUri, String prefix, String value) {
+    public void setAttribute(StringValue localName, StringValue namespaceUri, StringValue prefix, StringValue value) {
         if (nodeType != XMLNodeType.ELEMENT) {
             return;
         }
 
         if (localName == null || localName.isEmpty()) {
-            throw BallerinaErrors.createError("localname of the attribute cannot be empty");
+            throw BallerinaErrors.createError(new StringValue("localname of the attribute cannot be empty"));
         }
 
         // Validate whether the attribute name is an XML supported qualified name, according to the XML recommendation.
@@ -255,13 +256,13 @@ public final class XMLItem extends XMLValue<OMNode> {
         QName qname = getQName(localName, namespaceUri, prefix);
         OMAttribute attr = node.getAttribute(qname);
         if (attr != null) {
-            attr.setAttributeValue(value);
+            attr.setAttributeValue(value.value);
             return;
         }
 
         // If the prefix is 'xmlns' then this is a namespace addition
         if (prefix != null && prefix.equals(XMLConstants.XMLNS_ATTRIBUTE)) {
-            node.declareNamespace(value, localName);
+            node.declareNamespace(value.value, localName.value);
             return;
         }
 
@@ -272,7 +273,7 @@ public final class XMLItem extends XMLValue<OMNode> {
      * {@inheritDoc}
      */
     @Override
-    public MapValue<String, ?> getAttributesMap() {
+    public MapValue<StringValue, ?> getAttributesMap() {
         XMLAttributeMap attrMap = new XMLAttributeMap(this);
         return attrMap;
     }
@@ -281,7 +282,7 @@ public final class XMLItem extends XMLValue<OMNode> {
      * {@inheritDoc}
      */
     @Override
-    public void setAttributes(MapValue<String, ?> attributes) {
+    public void setAttributes(MapValue<StringValue, ?> attributes) {
         synchronized (this) {
             if (freezeStatus.getState() != State.UNFROZEN) {
                 FreezeUtils.handleInvalidUpdate(freezeStatus.getState(), XML_LANG_LIB);
@@ -306,20 +307,20 @@ public final class XMLItem extends XMLValue<OMNode> {
             namespaceIterator.remove();
         }
 
-        String localName, uri;
-        for (String qname : attributes.getKeys()) {
+        StringValue localName, uri;
+        for (StringValue qname : attributes.getKeys()) {
             if (qname.startsWith("{") && qname.indexOf('}') > 0) {
                 localName = qname.substring(qname.indexOf('}') + 1, qname.length());
                 uri = qname.substring(1, qname.indexOf('}'));
             } else {
                 localName = qname;
-                uri = STRING_NULL_VALUE;
+                uri = BSTRING_NULL_VALUE;
             }
 
             // Validate whether the attribute name is an XML supported qualified name,
             // according to the XML recommendation.
             XMLValidator.validateXMLName(localName);
-            setAttribute(localName, uri, STRING_NULL_VALUE, attributes.get(qname).toString());
+            setAttribute(localName, uri, BSTRING_NULL_VALUE, new StringValue(attributes.get(qname).toString()));
         }
     }
 
@@ -343,7 +344,7 @@ public final class XMLItem extends XMLValue<OMNode> {
      * {@inheritDoc}
      */
     @Override
-    public XMLValue<?> elements(String qname) {
+    public XMLValue<?> elements(StringValue qname) {
         ArrayValue elementsSeq = new ArrayValue(new BArrayType(BTypes.typeXML));
         switch (nodeType) {
             case ELEMENT:
@@ -382,7 +383,7 @@ public final class XMLItem extends XMLValue<OMNode> {
      * {@inheritDoc}
      */
     @Override
-    public XMLValue<?> children(String qname) {
+    public XMLValue<?> children(StringValue qname) {
         ArrayValue elementsSeq = new ArrayValue(new BArrayType(BTypes.typeXML));
         switch (nodeType) {
             case ELEMENT:
@@ -429,7 +430,7 @@ public final class XMLItem extends XMLValue<OMNode> {
                 currentNode = ((OMElement) omNode);
                 break;
             default:
-                throw BallerinaErrors.createError("not an " + XMLNodeType.ELEMENT);
+                throw BallerinaErrors.createError(new StringValue("not an " + XMLNodeType.ELEMENT));
         }
 
         currentNode.removeChildren();
@@ -467,7 +468,7 @@ public final class XMLItem extends XMLValue<OMNode> {
                 currentNode = ((OMElement) omNode);
                 break;
             default:
-                throw BallerinaErrors.createError("not an " + XMLNodeType.ELEMENT);
+                throw BallerinaErrors.createError(new StringValue("not an " + XMLNodeType.ELEMENT));
         }
 
         if (seq.getNodeType() == XMLNodeType.SEQUENCE) {
@@ -500,7 +501,8 @@ public final class XMLItem extends XMLValue<OMNode> {
     @Override
     public XMLValue<?> slice(long startIndex, long endIndex) {
         if (startIndex > 1 || endIndex > 1 || startIndex < -1 || endIndex < -1) {
-            throw BallerinaErrors.createError("index out of range: [" + startIndex + "," + endIndex + "]");
+            throw BallerinaErrors.createError(new StringValue("index out of range: [" +
+                    startIndex + "," + endIndex + "]"));
         }
 
         if (startIndex == -1) {
@@ -516,7 +518,7 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
 
         if (startIndex > endIndex) {
-            throw BallerinaErrors.createError("invalid indices: " + startIndex + " < " + endIndex);
+            throw BallerinaErrors.createError(new StringValue("invalid indices: " + startIndex + " < " + endIndex));
         }
 
         return this;
@@ -526,7 +528,7 @@ public final class XMLItem extends XMLValue<OMNode> {
      * {@inheritDoc}
      */
     @Override
-    public XMLValue<?> descendants(String qname) {
+    public XMLValue<?> descendants(StringValue qname) {
         List<XMLValue<?>> descendants = new ArrayList<XMLValue<?>>();
         switch (nodeType) {
             case ELEMENT:
@@ -618,11 +620,11 @@ public final class XMLItem extends XMLValue<OMNode> {
             case TEXT:
                 return XMLFactory.createXMLText(((OMText) omNode).getText());
             case COMMENT:
-                return XMLFactory.createXMLComment(((OMComment) omNode).getValue());
+                return XMLFactory.createXMLComment(new StringValue(((OMComment) omNode).getValue()));
             case PI:
                 return XMLFactory.createXMLProcessingInstruction(
-                        ((OMProcessingInstruction) omNode).getTarget(),
-                        ((OMProcessingInstruction) omNode).getValue());
+                        new StringValue(((OMProcessingInstruction) omNode).getTarget()),
+                        new StringValue(((OMProcessingInstruction) omNode).getValue()));
             default:
                 return new XMLItem(omNode);
         }
@@ -646,7 +648,7 @@ public final class XMLItem extends XMLValue<OMNode> {
     @Override
     public XMLValue<?> getItem(int index) {
         if (index != 0) {
-            throw BallerinaErrors.createError("index out of range: index: " + index + ", size: 1");
+            throw BallerinaErrors.createError(new StringValue("index out of range: index: " + index + ", size: 1"));
         }
 
         return this;
@@ -676,7 +678,7 @@ public final class XMLItem extends XMLValue<OMNode> {
      * {@inheritDoc}
      */
     @Override
-    public void removeAttribute(String qname) {
+    public void removeAttribute(StringValue qname) {
         synchronized (this) {
             if (freezeStatus.getState() != State.UNFROZEN) {
                 FreezeUtils.handleInvalidUpdate(freezeStatus.getState(), XML_LANG_LIB);
@@ -701,7 +703,7 @@ public final class XMLItem extends XMLValue<OMNode> {
      * {@inheritDoc}
      */
     @Override
-    public void removeChildren(String qname) {
+    public void removeChildren(StringValue qname) {
         synchronized (this) {
             if (freezeStatus.getState() != State.UNFROZEN) {
                 FreezeUtils.handleInvalidUpdate(freezeStatus.getState(), XML_LANG_LIB);
@@ -791,55 +793,57 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
     }
 
-    private QName getQName(String localName, String namespaceUri, String prefix) {
+    private QName getQName(StringValue localName, StringValue namespaceUri, StringValue prefix) {
         QName qname;
         if (prefix != null) {
-            qname = new QName(namespaceUri, localName, prefix);
+            qname = new QName(namespaceUri.value, localName.value, prefix.value);
         } else {
-            qname = new QName(namespaceUri, localName);
+            qname = new QName(namespaceUri.value, localName.value);
         }
         return qname;
     }
 
-    private void createAttribute(String localName, String namespaceUri, String prefix, String value, OMElement node) {
+    private void createAttribute(StringValue localName, StringValue namespaceUri,
+                                 StringValue prefix, StringValue value, OMElement node) {
         // If the namespace is null/empty, only the local part exists. Therefore add a simple attribute.
         if (namespaceUri == null || namespaceUri.isEmpty()) {
-            node.addAttribute(localName, value, null);
+            node.addAttribute(localName.value, value.value, null);
             return;
         }
 
         if (!(prefix == null || prefix.isEmpty())) {
-            OMNamespace existingNs = node.findNamespaceURI(prefix);
+            OMNamespace existingNs = node.findNamespaceURI(prefix.value);
 
             // If a namespace exists with the same prefix but a different uri, then do not add the new attribute.
             if (existingNs != null && !namespaceUri.equals(existingNs.getNamespaceURI())) {
                 throw BallerinaErrors
-                        .createError("failed to add attribute '" + prefix + ":" + localName + "'. prefix '" + prefix +
-                                "' is already bound to namespace '" + existingNs.getNamespaceURI() + "'");
+                        .createError(new StringValue("failed to add attribute '" + prefix + ":" + localName +
+                                "'. prefix '" + prefix + "' is already bound to namespace '" +
+                                existingNs.getNamespaceURI() + "'"));
             }
 
-            node.addAttribute(localName, value, new OMNamespaceImpl(namespaceUri, prefix));
+            node.addAttribute(localName.value, value.value, new OMNamespaceImpl(namespaceUri.value, prefix.value));
             return;
         }
 
         // We reach here if the namespace prefix is null/empty, and a namespace uri exists.
         // Find a prefix that has the same namespaceUri, out of the defined namespaces
-        Iterator<String> prefixes = node.getNamespaceContext(false).getPrefixes(namespaceUri);
+        Iterator<String> prefixes = node.getNamespaceContext(false).getPrefixes(namespaceUri.value);
         if (prefixes.hasNext()) {
-            prefix = prefixes.next();
+            prefix = new StringValue(prefixes.next());
             if (prefix.isEmpty()) {
-                node.addAttribute(localName, value, null);
+                node.addAttribute(localName.value, value.value, null);
                 return;
             }
             if (prefix.equals(XMLConstants.XMLNS_ATTRIBUTE)) {
                 // If found, and if its the default namespace, add a namespace decl
-                node.declareNamespace(value, localName);
+                node.declareNamespace(value.value, localName.value);
                 return;
             }
         }
 
         // Else use the prefix. If the prefix is null, a random prefix will be generated.
-        node.addAttribute(localName, value, new OMNamespaceImpl(namespaceUri, prefix));
+        node.addAttribute(localName.value, value.value, new OMNamespaceImpl(namespaceUri.value, prefix.value));
     }
 
     @Override
@@ -850,7 +854,7 @@ public final class XMLItem extends XMLValue<OMNode> {
     /**
      * A map value class implementation backed by an XML.
      */
-    private static class XMLAttributeMap extends MapValueImpl<String, String> {
+    private static class XMLAttributeMap extends MapValueImpl<StringValue, StringValue> {
 
         private final XMLItem bXmlItem;
 
@@ -860,9 +864,9 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
 
         @Override
-        public String put(String key, String value) {
-            String url = null;
-            String localName = key;
+        public StringValue put(StringValue key, StringValue value) {
+            StringValue url = null;
+            StringValue localName = key;
 
             int endOfUrl = key.lastIndexOf('}');
             if (endOfUrl != -1) {
@@ -878,10 +882,10 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
 
         @Override
-        public String get(Object key) {
-            String name = (String) key;
-            String namespace = null;
-            String localName = name;
+        public StringValue get(Object key) {
+            StringValue name = (StringValue) key;
+            StringValue namespace = null;
+            StringValue localName = name;
 
             int endOfUrl = name.lastIndexOf('}');
             if (endOfUrl != -1) {
@@ -901,7 +905,7 @@ public final class XMLItem extends XMLValue<OMNode> {
                 return attrMap;
             }
 
-            String namespaceOfPrefix = getNamespaceOfPrefix();
+            StringValue namespaceOfPrefix = getNamespaceOfPrefix();
             Iterator<OMNamespace> namespaceIterator = ((OMElement) this.bXmlItem.omNode).getAllDeclaredNamespaces();
             while (namespaceIterator.hasNext()) {
                 OMNamespace namespace = namespaceIterator.next();
@@ -928,7 +932,7 @@ public final class XMLItem extends XMLValue<OMNode> {
                 return "{}";
             }
 
-            String namespaceOfPrefix = getNamespaceOfPrefix();
+            StringValue namespaceOfPrefix = getNamespaceOfPrefix();
             Iterator<OMNamespace> namespaceIterator = ((OMElement) this.bXmlItem.omNode).getAllDeclaredNamespaces();
             while (namespaceIterator.hasNext()) {
                 OMNamespace namespace = namespaceIterator.next();
@@ -949,13 +953,13 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
 
         @Override
-        public Set<String> keySet() {
-            Set<String> keys = new LinkedHashSet<>();
+        public Set<StringValue> keySet() {
+            Set<StringValue> keys = new LinkedHashSet<>();
             if (this.bXmlItem.nodeType != XMLNodeType.ELEMENT) {
                 return keys;
             }
 
-            String namespaceOfPrefix = getNamespaceOfPrefix();
+            StringValue namespaceOfPrefix = getNamespaceOfPrefix();
             Iterator<OMNamespace> namespaceIterator = ((OMElement) this.bXmlItem.omNode).getAllDeclaredNamespaces();
             while (namespaceIterator.hasNext()) {
                 OMNamespace namespace = namespaceIterator.next();
@@ -963,22 +967,22 @@ public final class XMLItem extends XMLValue<OMNode> {
                 if (prefix.isEmpty()) {
                     continue;
                 }
-                keys.add(namespaceOfPrefix + prefix);
+                keys.add(new StringValue(namespaceOfPrefix.value + prefix));
             }
 
             Iterator<OMAttribute> attrIterator = ((OMElement) this.bXmlItem.omNode).getAllAttributes();
             while (attrIterator.hasNext()) {
                 OMAttribute attr = attrIterator.next();
-                keys.add(attr.getQName().toString());
+                keys.add(new StringValue(attr.getQName().toString()));
             }
 
             return keys;
         }
 
         @Override
-        public String[] getKeys() {
-            Set<String> keys = this.keySet();
-            return keys.toArray(new String[keys.size()]);
+        public StringValue[] getKeys() {
+            Set<StringValue> keys = this.keySet();
+            return keys.toArray(new StringValue[keys.size()]);
         }
 
         @Override
@@ -1000,21 +1004,21 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
 
         @Override
-        public String getOrThrow(Object key) {
-            String value = this.get(key);
+        public StringValue getOrThrow(StringValue key) {
+            StringValue value = this.get(key);
             if (value == null) {
-                throw BallerinaErrors.createError(getModulePrefixedReason(XML_LANG_LIB, KEY_NOT_FOUND_ERROR_IDENTIFIER),
-                                                  "cannot find key '" + key + "'");
+                throw BallerinaErrors.createError(new StringValue(getModulePrefixedReason(XML_LANG_LIB,
+                        KEY_NOT_FOUND_ERROR_IDENTIFIER)), "cannot find key '" + key + "'");
             }
             return value;
         }
 
         @Override
-        public String fillAndGet(Object key) {
-            String value = this.get(key);
+        public StringValue fillAndGet(StringValue key) {
+            StringValue value = this.get(key);
             if (value == null) {
                 value = BTypes.typeString.getZeroValue();
-                this.put((String) key, value);
+                this.put((StringValue) key, value);
             }
             return value;
         }
@@ -1025,8 +1029,8 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
 
         @Override
-        public Collection<String> values() {
-            List<String> values = new ArrayList<>();
+        public Collection<StringValue> values() {
+            List<StringValue> values = new ArrayList<>();
             if (this.bXmlItem.nodeType != XMLNodeType.ELEMENT) {
                 return values;
             }
@@ -1038,13 +1042,13 @@ public final class XMLItem extends XMLValue<OMNode> {
                 if (prefix.isEmpty()) {
                     continue;
                 }
-                values.add(namespace.getNamespaceURI());
+                values.add(new StringValue(namespace.getNamespaceURI()));
             }
 
             Iterator<OMAttribute> attrIterator = ((OMElement) this.bXmlItem.omNode).getAllAttributes();
             while (attrIterator.hasNext()) {
                 OMAttribute attr = attrIterator.next();
-                values.add(attr.getAttributeValue());
+                values.add(new StringValue(attr.getAttributeValue()));
             }
 
             return values;
@@ -1061,9 +1065,9 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
 
         @Override
-        public String remove(Object key) {
-            String attr = this.get(key);
-            this.bXmlItem.removeAttribute((String) key);
+        public StringValue remove(Object key) {
+            StringValue attr = this.get(key);
+            this.bXmlItem.removeAttribute((StringValue) key);
             return attr;
         }
 
@@ -1097,11 +1101,11 @@ public final class XMLItem extends XMLValue<OMNode> {
         }
 
         // private methods
-        private String getNamespaceOfPrefix() {
+        private StringValue getNamespaceOfPrefix() {
             OMNamespace defaultNs = ((OMElement) this.bXmlItem.omNode).getDefaultNamespace();
             String namespaceOfPrefix =
                     '{' + (defaultNs == null ? XMLConstants.XMLNS_ATTRIBUTE_NS_URI : defaultNs.getNamespaceURI()) + '}';
-            return namespaceOfPrefix;
+            return new StringValue(namespaceOfPrefix);
         }
     }
 }

@@ -27,6 +27,7 @@ import org.ballerinalang.jvm.types.TypeTags;
 import org.ballerinalang.jvm.util.exceptions.BLangExceptionHelper;
 import org.ballerinalang.jvm.util.exceptions.RuntimeErrors;
 import org.ballerinalang.jvm.values.ArrayValue;
+import org.ballerinalang.jvm.values.StringValue;
 
 import static org.ballerinalang.jvm.util.BLangConstants.ARRAY_LANG_LIB;
 import static org.ballerinalang.jvm.util.exceptions.BallerinaErrorReasons.INHERENT_TYPE_VIOLATION_ERROR_IDENTIFIER;
@@ -56,7 +57,7 @@ public class Lists {
             case TypeTags.INT_TAG:
                 return new Long((int) array.getInt(index));
             case TypeTags.STRING_TAG:
-                return new String(array.getString(index));
+                return new StringValue(array.getString(index));
             default:
                 return array.getRefValue(index);
         }
@@ -75,7 +76,7 @@ public class Lists {
 
         if (elementType != null && !TypeChecker.checkIsType(refType, elementType)) {
             throw BallerinaErrors.createError(
-                    getModulePrefixedReason(ARRAY_LANG_LIB, INHERENT_TYPE_VIOLATION_ERROR_IDENTIFIER),
+                    new StringValue(getModulePrefixedReason(ARRAY_LANG_LIB, INHERENT_TYPE_VIOLATION_ERROR_IDENTIFIER)),
                     BLangExceptionHelper.getErrorMessage(RuntimeErrors.INCOMPATIBLE_TYPE,
                             elementType, (refType != null) ? TypeChecker.getType(refType) : BTypes.typeNull));
         }

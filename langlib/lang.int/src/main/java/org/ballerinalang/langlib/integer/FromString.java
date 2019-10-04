@@ -23,6 +23,7 @@ import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.types.BTypes;
 import org.ballerinalang.jvm.util.exceptions.BLangExceptionHelper;
 import org.ballerinalang.jvm.util.exceptions.RuntimeErrors;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
@@ -49,9 +50,9 @@ public class FromString {
         try {
             return Long.parseLong(s);
         } catch (NumberFormatException e) {
-            return BallerinaErrors.createError(getModulePrefixedReason(INT_LANG_LIB, NUMBER_PARSING_ERROR_IDENTIFIER),
-                    BLangExceptionHelper.getErrorMessage(RuntimeErrors.INCOMPATIBLE_SIMPLE_TYPE_CONVERT_OPERATION,
-                    BTypes.typeString, s, BTypes.typeInt));
+            return BallerinaErrors.createError(new StringValue(getModulePrefixedReason(INT_LANG_LIB,
+                    NUMBER_PARSING_ERROR_IDENTIFIER)), BLangExceptionHelper.getErrorMessage(RuntimeErrors
+                            .INCOMPATIBLE_SIMPLE_TYPE_CONVERT_OPERATION, BTypes.typeString, s, BTypes.typeInt));
         }
     }
 }

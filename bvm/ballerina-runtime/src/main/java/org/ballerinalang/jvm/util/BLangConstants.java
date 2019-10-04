@@ -18,6 +18,7 @@
 package org.ballerinalang.jvm.util;
 
 import org.ballerinalang.jvm.types.BPackage;
+import org.ballerinalang.jvm.values.StringValue;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -109,8 +110,9 @@ public class BLangConstants {
     public static final String FLOAT_LANG_LIB = "lang.float";
 
     // Zero value for string
+    public static final StringValue BSTRING_NULL_VALUE = null;
     public static final String STRING_NULL_VALUE = null;
-    
+
     // Empty value for string
     public static final String STRING_EMPTY_VALUE = "";
 

@@ -29,6 +29,7 @@ import org.ballerinalang.jvm.values.ArrayValue;
 import org.ballerinalang.jvm.values.DecimalValue;
 import org.ballerinalang.jvm.values.ErrorValue;
 import org.ballerinalang.jvm.values.MapValueImpl;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.utils.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -77,7 +78,7 @@ public class TableUtils {
         return sbSql.toString();
     }
 
-    public static void prepareAndExecuteStatement(PreparedStatement stmt, MapValueImpl<?, ?> data) {
+    public static void prepareAndExecuteStatement(PreparedStatement stmt, MapValueImpl<StringValue, ?> data) {
         try {
             Collection<BField> structFields = ((BStructureType) data.getType()).getFields().values();
             int index = 1;
@@ -119,29 +120,30 @@ public class TableUtils {
         }
     }
 
-    private static void prepareAndExecuteStatement(PreparedStatement stmt, MapValueImpl<?, ?> data, int index,
-            BField sf, int type, String fieldName) throws SQLException {
+    private static void prepareAndExecuteStatement(PreparedStatement stmt, MapValueImpl<StringValue, ?> data,
+                                                   int index, BField sf, int type,
+                                                   String fieldName) throws SQLException {
         Object value = data.get(fieldName);
         switch (type) {
             case TypeTags.INT_TAG:
                 if (value == null) {
                     stmt.setNull(index, Types.BIGINT);
                 } else {
-                    stmt.setLong(index, data.getIntValue(fieldName));
+                    stmt.setLong(index, data.getIntValue(new StringValue(fieldName)));
                 }
                 break;
             case TypeTags.STRING_TAG:
                 if (value == null) {
                     stmt.setNull(index, Types.VARCHAR);
                 } else {
-                    stmt.setString(index, data.getStringValue(fieldName));
+                    stmt.setString(index, data.getStringValue(new StringValue(fieldName)));
                 }
                 break;
             case TypeTags.FLOAT_TAG:
                 if (value == null) {
                     stmt.setNull(index, Types.DOUBLE);
                 } else {
-                    stmt.setDouble(index, data.getFloatValue(fieldName));
+                    stmt.setDouble(index, data.getFloatValue(new StringValue(fieldName)));
                 }
                 break;
             case TypeTags.DECIMAL_TAG:
@@ -155,7 +157,7 @@ public class TableUtils {
                 if (value == null) {
                     stmt.setNull(index, Types.BOOLEAN);
                 } else {
-                    stmt.setBoolean(index, data.getBooleanValue(fieldName));
+                    stmt.setBoolean(index, data.getBooleanValue(new StringValue(fieldName)));
                 }
                 break;
             case TypeTags.XML_TAG:
@@ -238,17 +240,17 @@ public class TableUtils {
         String detail = throwable.getMessage() != null ?
                 errorSuffix + ": " + throwable.getMessage() :
                 DEFAULT_ERROR_DETAIL_MESSAGE;
-        return BallerinaErrors.createError(BallerinaErrorReasons.TABLE_OPERATION_ERROR, detail);
+        return BallerinaErrors.createError(new StringValue(BallerinaErrorReasons.TABLE_OPERATION_ERROR), detail);
     }
 
     public static ErrorValue createTableOperationError(Throwable throwable) {
         String detail = throwable.getMessage() != null ? throwable.getMessage() : DEFAULT_ERROR_DETAIL_MESSAGE;
         return BallerinaErrors
-                .createError(BallerinaErrorReasons.TABLE_OPERATION_ERROR, detail);
+                .createError(new StringValue(BallerinaErrorReasons.TABLE_OPERATION_ERROR), detail);
     }
 
     public static ErrorValue createTableOperationError(String detail) {
         return BallerinaErrors
-                .createError(BallerinaErrorReasons.TABLE_OPERATION_ERROR, detail);
+                .createError(new StringValue(BallerinaErrorReasons.TABLE_OPERATION_ERROR), detail);
     }
 }

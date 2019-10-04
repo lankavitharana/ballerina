@@ -150,7 +150,7 @@ public type ObjectGenerator object {
         bir:Function?[] funcs = getFunctions(functions);
 
         jvm:MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call",
-                io:sprintf("(L%s;L%s;[L%s;)L%s;", STRAND, STRING_VALUE, OBJECT, OBJECT), (), ());
+                io:sprintf("(L%s;L%s;[L%s;)L%s;", STRAND, BSTRING_VALUE, OBJECT, OBJECT), (), ());
         mv.visitCode();
 
         int funcNameRegIndex = 2;
@@ -221,7 +221,7 @@ public type ObjectGenerator object {
 
     private function createGetMethod(jvm:ClassWriter cw, bir:BObjectField?[] fields, string className) {
         jvm:MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "get",
-                io:sprintf("(L%s;)L%s;", STRING_VALUE, OBJECT), (), ());
+                io:sprintf("(L%s;)L%s;", BSTRING_VALUE, OBJECT), (), ());
         mv.visitCode();
 
         int fieldNameRegIndex = 1;
@@ -255,7 +255,7 @@ public type ObjectGenerator object {
 
     private function createSetMethod(jvm:ClassWriter cw, bir:BObjectField?[] fields, string className) {
         jvm:MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "set",
-                io:sprintf("(L%s;L%s;)V", STRING_VALUE, OBJECT), (), ());
+                io:sprintf("(L%s;L%s;)V", BSTRING_VALUE, OBJECT), (), ());
         mv.visitCode();
         int fieldNameRegIndex = 1;
         int valueRegIndex = 2;
@@ -266,7 +266,7 @@ public type ObjectGenerator object {
         mv.visitVarInsn(ALOAD, fieldNameRegIndex);
         mv.visitVarInsn(ALOAD, valueRegIndex);
         mv.visitMethodInsn(INVOKEVIRTUAL, className, "checkFieldUpdate",
-                io:sprintf("(L%s;L%s;)V", STRING_VALUE, OBJECT), false);
+                io:sprintf("(L%s;L%s;)V", BSTRING_VALUE, OBJECT), false);
 
         // sort the fields before generating switch case
         NodeSorter sorter = new();
@@ -449,7 +449,7 @@ function desugarObjectMethods(bir:Package module, bir:BType bType, bir:Function?
 function createLabelsforSwitch(jvm:MethodVisitor mv, int nameRegIndex, NamedNode?[] nodes,
         jvm:Label defaultCaseLabel) returns jvm:Label[] {
     mv.visitVarInsn(ALOAD, nameRegIndex);
-    mv.visitMethodInsn(INVOKEVIRTUAL, STRING_VALUE, "hashCode", "()I", false);
+    mv.visitMethodInsn(INVOKEVIRTUAL, BSTRING_VALUE, "hashCode", "()I", false);
 
     // Create labels for the cases
     int i = 0;

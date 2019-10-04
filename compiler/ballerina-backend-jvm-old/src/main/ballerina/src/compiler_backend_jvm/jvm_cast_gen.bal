@@ -149,15 +149,15 @@ function generateCheckCastToString(jvm:MethodVisitor mv, bir:BType sourceType) {
             sourceType is bir:BJSONType ||
             sourceType is bir:BFiniteType) {
         checkCast(mv, bir:TYPE_STRING);
-        mv.visitTypeInsn(CHECKCAST, STRING_VALUE);
+        mv.visitTypeInsn(CHECKCAST, BSTRING_VALUE);
     } else if (sourceType is bir:BTypeInt) {
-        mv.visitMethodInsn(INVOKESTATIC, LONG_VALUE, "toString", io:sprintf("(J)L%s;", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "toString", io:sprintf("(J)L%s;", BSTRING_VALUE), false);
     } else if (sourceType is bir:BTypeFloat) {
-        mv.visitMethodInsn(INVOKESTATIC, DOUBLE_VALUE, "toString", io:sprintf("(D)L%s;", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "toString", io:sprintf("(D)L%s;", BSTRING_VALUE), false);
     } else if (sourceType is bir:BTypeBoolean) {
-        mv.visitMethodInsn(INVOKESTATIC, BOOLEAN_VALUE, "toString", io:sprintf("(Z)L%s;", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "toString", io:sprintf("(Z)L%s;", BSTRING_VALUE), false);
     } else if (sourceType is bir:BTypeDecimal) {
-        mv.visitMethodInsn(INVOKESTATIC, STRING_VALUE, "valueOf", io:sprintf("(L%s;)L%s;", OBJECT, STRING_VALUE),
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "toString", io:sprintf("(L%s;)L%s;", DECIMAL_VALUE, BSTRING_VALUE),
             false);
     } else {
         error err = error(io:sprintf("Casting is not supported from '%s' to 'string'", sourceType));
@@ -351,16 +351,16 @@ function generateCastToString(jvm:MethodVisitor mv, bir:BType sourceType) {
     if (sourceType is bir:BTypeString) {
         // do nothing
     } else if (sourceType is bir:BTypeInt) {
-        mv.visitMethodInsn(INVOKESTATIC, LONG_VALUE, "toString", io:sprintf("(J)L%s;", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "toString", io:sprintf("(J)L%s;", BSTRING_VALUE), false);
     } else if (sourceType is bir:BTypeFloat) {
-        mv.visitMethodInsn(INVOKESTATIC, DOUBLE_VALUE, "toString", io:sprintf("(D)L%s;", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "toString", io:sprintf("(D)L%s;", BSTRING_VALUE), false);
     } else if (sourceType is bir:BTypeBoolean) {
-        mv.visitMethodInsn(INVOKESTATIC, BOOLEAN_VALUE, "toString", io:sprintf("(Z)L%s;", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKESTATIC, STRING_UTILS, "toString", io:sprintf("(Z)L%s;", BSTRING_VALUE), false);
     } else if (sourceType is bir:BTypeAny ||
             sourceType is bir:BTypeAnyData ||
             sourceType is bir:BUnionType ||
             sourceType is bir:BJSONType) {
-        mv.visitTypeInsn(CHECKCAST, STRING_VALUE);
+        mv.visitTypeInsn(CHECKCAST, BSTRING_VALUE);
     } else {
         error err = error(io:sprintf("Casting is not supported from '%s' to 'string'", sourceType));
         panic err;

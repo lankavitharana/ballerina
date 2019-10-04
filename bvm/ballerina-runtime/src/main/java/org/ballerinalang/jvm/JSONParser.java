@@ -25,6 +25,7 @@ import org.ballerinalang.jvm.types.TypeTags;
 import org.ballerinalang.jvm.util.exceptions.BallerinaException;
 import org.ballerinalang.jvm.values.ArrayValue;
 import org.ballerinalang.jvm.values.MapValueImpl;
+import org.ballerinalang.jvm.values.StringValue;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -74,7 +75,7 @@ public class JSONParser {
         try {
             return parse(new InputStreamReader(new BufferedInputStream(in), charsetName));
         } catch (IOException e) {
-            throw BallerinaErrors.createError("Error in parsing JSON data: " + e.getMessage());
+            throw BallerinaErrors.createError(new StringValue("Error in parsing JSON data: " + e.getMessage()));
         }
     }
 

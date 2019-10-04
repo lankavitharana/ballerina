@@ -20,6 +20,7 @@ package org.ballerinalang.langlib.xml;
 
 import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.util.exceptions.BLangExceptionHelper;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.XMLValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
@@ -41,7 +42,7 @@ public class RemoveChildren {
 
     private static final String OPERATION = "remove children from xml element";
 
-    public static void removeChildren(Strand strand, XMLValue<?> xml, String qname) {
+    public static void removeChildren(Strand strand, XMLValue<?> xml, StringValue qname) {
         try {
             xml.removeChildren(qname);
         } catch (Throwable e) {

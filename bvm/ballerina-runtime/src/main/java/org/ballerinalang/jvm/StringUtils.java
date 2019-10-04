@@ -17,6 +17,8 @@
 package org.ballerinalang.jvm;
 
 import org.ballerinalang.jvm.util.exceptions.BallerinaException;
+import org.ballerinalang.jvm.values.DecimalValue;
+import org.ballerinalang.jvm.values.StringValue;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -44,7 +46,7 @@ public class StringUtils {
      * @param s2 Second string
      * @return flag indicating whether the two string values are equal
      */
-    public static boolean isEqual(String s1, String s2) {
+    public static boolean isEqual(StringValue s1, StringValue s2) {
         if (s1 == s2) {
             return true;
         } else if (s1 == null || s2 == null) {
@@ -94,13 +96,45 @@ public class StringUtils {
         return textBuilder.toString();
     }
 
-    public static String getStringAt(String s, long index) {
-        if (index < 0 || index >= s.length()) {
-            throw BallerinaErrors.createError(getModulePrefixedReason(STRING_LANG_LIB,
-                                                                      INDEX_OUT_OF_RANGE_ERROR_IDENTIFIER),
-                                              "string index out of range: index: " + index + ", size: " + s.length());
+    public static StringValue getStringAt(StringValue s, long index) {
+        if (index < 0 || index >= s.value.length()) {
+            throw BallerinaErrors.createError(new StringValue(getModulePrefixedReason(STRING_LANG_LIB,
+                    INDEX_OUT_OF_RANGE_ERROR_IDENTIFIER)),
+                    "string index out of range: index: " + index + ", size: " + s.value.length());
         }
 
-        return String.valueOf(s.charAt((int) index));
+        return new StringValue(String.valueOf(s.value.charAt((int) index)));
+    }
+
+    public static StringValue toString(long val) {
+        return new StringValue(Long.toString(val));
+    }
+
+    public static StringValue toString(double val) {
+        return new StringValue(Double.toString(val));
+    }
+
+    public static StringValue toString(boolean val) {
+        return new StringValue(Boolean.toString(val));
+    }
+
+    public static StringValue toString(DecimalValue val) {
+        return new StringValue(val.toString());
+    }
+
+    public static long parseLong(StringValue val) {
+        return Long.parseLong(val.value);
+    }
+
+    public static int parseInt(StringValue val) {
+        return Integer.parseInt(val.value);
+    }
+
+    public static double parseDouble(StringValue val) {
+        return Double.parseDouble(val.value);
+    }
+
+    public static boolean parseBoolean(StringValue val) {
+        return Boolean.parseBoolean(val.value);
     }
 }

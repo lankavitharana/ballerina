@@ -19,6 +19,7 @@ package org.ballerinalang.langlib.xml;
 
 import org.ballerinalang.jvm.XMLFactory;
 import org.ballerinalang.jvm.scheduling.Strand;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.XMLValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
@@ -39,7 +40,7 @@ import org.ballerinalang.natives.annotations.ReturnType;
 )
 public class CreateComment {
 
-    public static XMLValue<?> createComment(Strand strand, String string) {
+    public static XMLValue<?> createComment(Strand strand, StringValue string) {
         return XMLFactory.createXMLComment(string);
     }
 }

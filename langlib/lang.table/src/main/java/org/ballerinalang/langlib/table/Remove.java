@@ -21,6 +21,7 @@ package org.ballerinalang.langlib.table;
 import org.ballerinalang.jvm.BallerinaErrors;
 import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.values.FPValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.jvm.values.TableValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
@@ -43,7 +44,7 @@ public class Remove {
         try {
             return table.performRemoveOperation(strand, func);
         } catch (org.ballerinalang.jvm.util.exceptions.BLangFreezeException e) {
-            throw BallerinaErrors.createError(e.getMessage(),
+            throw BallerinaErrors.createError(new StringValue(e.getMessage()),
                                               "Failed to remove data from the table: " + e.getDetail());
         }
     }

@@ -99,3 +99,11 @@ public function acceptSomethingReturnSomethingAndThrowsUncheckedException(handle
     class:"org/ballerinalang/nativeimpl/jvm/tests/StaticMethods"
 } external;
 
+function testAcceptBalStringAndReturnBalString(string h1) returns string {
+    string retVal = acceptBalStringAndReturnBalString(h1);
+    return retVal;
+}
+
+public function acceptBalStringAndReturnBalString(string h1) returns string = @java:Method {
+    class:"org/ballerinalang/nativeimpl/jvm/tests/StaticMethods"
+} external;

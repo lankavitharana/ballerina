@@ -17,7 +17,9 @@
  */
 package org.ballerinalang.test.javainterop.basic;
 
+import com.sun.org.apache.xpath.internal.operations.String;
 import org.ballerinalang.model.values.BHandleValue;
+import org.ballerinalang.model.values.BString;
 import org.ballerinalang.model.values.BValue;
 import org.ballerinalang.test.util.BCompileUtil;
 import org.ballerinalang.test.util.BRunUtil;
@@ -96,6 +98,15 @@ public class StaticMethodTest {
         args[1] = new BHandleValue(2);
         args[2] = new BHandleValue(3);
         BValue[] returns = BRunUtil.invoke(result, "testAcceptThreeParamsAndReturnSomething", args);
+        Assert.assertEquals(returns.length, 1);
+        Assert.assertEquals(((BHandleValue) returns[0]).getValue(), 6);
+    }
+
+    @Test(description = "Test static java method that accepts three parameters")
+    public void test() {
+        BValue[] args = new BValue[3];
+        args[0] = new BString("1");
+        BValue[] returns = BRunUtil.invoke(result, "testAcceptBalStringAndReturnBalString", args);
         Assert.assertEquals(returns.length, 1);
         Assert.assertEquals(((BHandleValue) returns[0]).getValue(), 6);
     }

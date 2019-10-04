@@ -24,6 +24,7 @@ import org.ballerinalang.jvm.scheduling.Strand;
 import org.ballerinalang.jvm.util.exceptions.BLangExceptionHelper;
 import org.ballerinalang.jvm.util.exceptions.RuntimeErrors;
 import org.ballerinalang.jvm.values.RefValue;
+import org.ballerinalang.jvm.values.StringValue;
 import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
@@ -59,8 +60,9 @@ public class Clone {
         RefValue refValue = (RefValue) value;
         if (refValue.getType().getTag() == TypeTags.ERROR || !TypeChecker.checkIsLikeType(refValue, org
                 .ballerinalang.jvm.types.BTypes.typePureType)) {
-            return BallerinaErrors.createError(BALLERINA_PREFIXED_CLONE_ERROR, BLangExceptionHelper.getErrorMessage(
-                    RuntimeErrors.UNSUPPORTED_CLONE_OPERATION, refValue.getType()));
+            return BallerinaErrors.createError(new StringValue(BALLERINA_PREFIXED_CLONE_ERROR),
+                    BLangExceptionHelper.getErrorMessage(RuntimeErrors.UNSUPPORTED_CLONE_OPERATION,
+                            refValue.getType()));
         }
         return refValue.copy(new HashMap<>());
     }

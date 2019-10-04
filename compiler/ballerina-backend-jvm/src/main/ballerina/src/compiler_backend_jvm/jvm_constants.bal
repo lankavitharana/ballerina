@@ -231,6 +231,7 @@ const string LONG_VALUE = "java/lang/Long";
 const string BOOLEAN_VALUE = "java/lang/Boolean";
 const string DOUBLE_VALUE = "java/lang/Double";
 const string DECIMAL_VALUE = "org/ballerinalang/jvm/values/DecimalValue";
+const string BSTRING_VALUE = "org/ballerinalang/jvm/values/StringValue";
 const string INT_VALUE = "java/lang/Integer";
 const string XML_VALUE = "org/ballerinalang/jvm/values/XMLValue";
 const string XML_QNAME = "org/ballerinalang/jvm/values/XMLQName";

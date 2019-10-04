@@ -731,7 +731,7 @@ function genVarArg(jvm:MethodVisitor mv, BalToJVMIndexMap indexMap, bir:BType bT
     if (bElementType is bir:BTypeInt) {
         mv.visitMethodInsn(INVOKEVIRTUAL, ARRAY_VALUE, "getInt", "(J)J", false);
     } else if (bElementType is bir:BTypeString) {
-        mv.visitMethodInsn(INVOKEVIRTUAL, ARRAY_VALUE, "getString", io:sprintf("(J)L%s;", STRING_VALUE), false);
+        mv.visitMethodInsn(INVOKEVIRTUAL, ARRAY_VALUE, "getString", io:sprintf("(J)L%s;", BSTRING_VALUE), false);
     } else if (bElementType is bir:BTypeBoolean) {
         mv.visitMethodInsn(INVOKEVIRTUAL, ARRAY_VALUE, "getBoolean", "(J)Z", false);
     } else if (bElementType is bir:BTypeByte) {
